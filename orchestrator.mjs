@@ -35,6 +35,11 @@ import { WorktreeSession, buildPlanBatches, isGitRepo, ensureGitRepo } from './l
 
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 
+// A cancellation is sticky: a later dispatch must never revive a cancelled task
+// or overwrite its verdict. FAILED is excluded because the scheduler
+// deliberately re-dispatches it to spend its bounded retry / fallback budget.
+const NON_REVIVABLE_STATES = new Set(['CANCELLED']);
+
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const TASKS_DIR = join(ROOT, 'tasks');
 const LOCKS_DIR = join(ROOT, 'locks');
@@ -784,6 +789,24 @@ async function executePlannedSteps(task, adapters, { governanceBridge = null, ta
 
 
 export async function executeTask(task, adapters = ADAPTERS, { governanceBridge = null, targetCoordination = null, onRunStart = null, isShutdownRequested = null, shutdownMode = null } = {}) {
+  // Never revive a task that already reached a terminal state, and never start
+  // an executor for one the operator already cancelled: the on-disk task is the
+  // lifecycle truth, so a stale in-memory copy must not overwrite it.
+  try {
+    const onDiskAtEntry = loadTask(task.task_id, tasksDirOf(task));
+    if (NON_REVIVABLE_STATES.has(onDiskAtEntry.state)) return onDiskAtEntry;
+    if (onDiskAtEntry.cancel_requested_at) {
+      task.cancel_requested_at = onDiskAtEntry.cancel_requested_at;
+      task.cancelled_by = onDiskAtEntry.cancelled_by ?? task.cancelled_by;
+      task.cancel_reason = task.cancel_reason ?? 'cancelled by operator before execution';
+      task.state = 'CANCELLED';
+      task.cancelled_at = task.cancelled_at ?? new Date().toISOString();
+      task.retryable = false;
+      saveTask(task);
+      return task;
+    }
+  } catch { /* task not persisted yet (programmatic callers, tests) */ }
+
   // tolerate minimally-shaped task objects (tests, programmatic callers)
   task.runs = task.runs ?? [];
   task.revisions_used = task.revisions_used ?? 1;
@@ -831,6 +854,12 @@ export async function executeTask(task, adapters = ADAPTERS, { governanceBridge 
       saveTask(task);
       return task;
     }
+    // A non-revivable state already on disk wins: an operator cancellation that
+    // landed while this run was unwinding must not be overwritten with FAILED.
+    try {
+      const onDisk = loadTask(task.task_id, tasksDirOf(task));
+      if (NON_REVIVABLE_STATES.has(onDisk.state)) return onDisk;
+    } catch { /* ignore */ }
     task.state = 'FAILED';
     task.failure_reason = String(err?.message ?? err);
     if (err?.error_classification) {
@@ -941,6 +970,12 @@ async function runLoopFromReview(task, revision, adapters, { governanceBridge = 
       if (task.task_mode === 'governed_write') stageSubmission(task);
     }
   } catch (err) {
+    // A non-revivable state already on disk wins: an operator cancellation that
+    // landed while this run was unwinding must not be overwritten with FAILED.
+    try {
+      const onDisk = loadTask(task.task_id, tasksDirOf(task));
+      if (NON_REVIVABLE_STATES.has(onDisk.state)) return onDisk;
+    } catch { /* ignore */ }
     task.state = 'FAILED';
     task.failure_reason = String(err?.message ?? err);
     if (err?.error_classification) {
