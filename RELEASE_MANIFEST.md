@@ -4,12 +4,12 @@
 
 | Attribute | Specification |
 | :--- | :--- |
-| **Release Name** | Agent Foundry Orchestrator Production Freeze v1 |
-| **Frozen At** | 2026-09-07T00:45:00+08:00 |
+| **Release Name** | Agent Foundry Orchestrator Production Release v1.2 (Full Capabilities) |
+| **Frozen At** | 2026-09-15T22:30:00+08:00 |
 | **Architecture Reference** | [`FINAL_ARCHITECTURE.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/FINAL_ARCHITECTURE.md) |
 | **Safety Model Reference** | [`EXECUTOR_SAFETY_MODEL.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/EXECUTOR_SAFETY_MODEL.md) |
-| **Regression Test Status** | **91 / 91 PASS (100%)** |
-| **Execution Engine** | Single-task state machine (`orchestrator.mjs` + `lib/scheduler.mjs`) |
+| **Regression Test Status** | **146 / 146 PASS (100%)** |
+| **Execution Engine** | Multi-step DAG state machine (`orchestrator.mjs` + `lib/scheduler.mjs` + `lib/worktree.mjs`) |
 | **Storage Architecture** | Filesystem atomic rename (`saveTaskAtomic`), zero SQLite/Postgres/Redis dependencies |
 
 ---
@@ -30,31 +30,38 @@
 | **PHASE 7-B** | Operator Maintenance Layer | Operator CLI tool (`af-admin.mjs`), executor status inspect, terminal task prune, audit log rotation. |
 | **PHASE 8-A** | Production Readiness Audit | Persistence check, security scan, executor status matrix, 5 failure injection tests, operator runbook. |
 | **PHASE 8-B** | Production Freeze Documentation | Release manifest, change control protocol, disaster recovery runbook, architecture invariant tests. |
+| **PHASE 9** | Multi-Executor Extension (Cline) | Native Cline CLI adapter (`bin/cline-af`), DeepSeek-V4-Flash fallback support, health/resume/run integration. |
+| **PHASE 10** | Human Intent Gate & Action Contract | `intent/` + `approval/` + `contracts/`: Action Validator, Asset Classifier, Intent Policy, sensitive operation blocking. |
+| **PHASE 11** | Autonomous Planning Layer | `planner/` + `lib/codex-planner.mjs`: Task decomposition, DAG batching, `task-plan.schema.json`, planner boundary invariants. |
+| **PHASE 12** | Worktree & Workbench Sandbox | `lib/worktree.mjs` + `lib/workbench.mjs`: Multi-step DAG execution in parallel Git worktrees, conflict fail-closed detection. |
+| **PHASE 13** | Host Decoupling & Clean Release | `lib/config.mjs`: Elimination of 94 hardcoded host paths, dynamic environment resolution, clean factory state reset. |
 
 ---
 
 ## Core Runtime Guarantees
 
 1. **ROLE != PLATFORM**:
-   - Platforms (`codex`, `claude`, `antigravity`, `vertex-gemini`) are strictly execution adapters.
-   - Roles (`author`, `reviewer`, `verifier`, `operator`) are dynamic attributes assigned per Task Capsule.
+   - Platforms (`codex`, `claude`, `antigravity`, `vertex-gemini`, `cline`) are strictly execution adapters.
+   - Roles (`author`, `reviewer`, `verifier`, `worker`, `planner`) are dynamic attributes assigned per Task Capsule.
    - No executor is hardcoded to any task role.
 2. **Governance Single Source of Truth**:
    - All formal knowledge governance decisions derive solely from `agent-foundry-vault` via `vault-mcp`.
    - The Orchestrator never computes, fakes, or relaxes governance policy locally.
-3. **Capability / Availability / Runtime Safety Separation**:
+3. **Human Intent Gate Protection**:
+   - Sensitive modifications (schema changes, system config, destructive deletes, plan direction shifts) require explicit human approval via `approval/intent-gate.mjs`.
+4. **Capability / Availability / Runtime Safety Separation**:
    - **Capability**: Statically defined in `agent-foundry-global/executors/*.json` (e.g. MCP support, terminal support).
    - **Availability**: Dynamically tracked based on provider account standing (e.g. `ACCOUNT_DISABLED`, `UNAVAILABLE`).
    - **Runtime Safety**: Managed in-memory and persisted by `ExecutorRuntimeGuard` (concurrency slot, circuit breaker).
-4. **Fail-Closed Principle**:
+5. **Fail-Closed Principle**:
    - Any fatal policy violation (`ACCOUNT_POLICY`, 403 Forbidden, TOS violation) immediately trips the circuit to `OPEN_MANUAL_RESET`.
    - Under fatal errors, automatic retries are strictly 0, router fallback is strictly forbidden, and the task halts fail-closed.
-5. **Exact Resume Integrity**:
-   - Fix loops and crash recovery preserve the exact provider `session_ref`, maintaining conversation context.
-   - A recovery attempt with mismatched state version or corrupted state fails closed without overwriting.
-6. **Zero Credential Persistence**:
+6. **Parallel Worktree Isolation**:
+   - Multi-step DAG tasks execute concurrent branches in isolated Git worktrees (`lib/worktree.mjs`), with automatic conflict detection failing closed safely.
+7. **Cross-Platform Portability**:
+   - Zero hardcoded author host paths. All paths are resolved via `lib/config.mjs` using environment variables (`AF_GLOBAL_DIR`, `AF_VAULT_MCP_SERVER`), relative discovery, and dynamic `HOME` inference.
+8. **Zero Credential Persistence**:
    - The Orchestrator never writes API keys, tokens, auth headers, passwords, or raw prompts/responses to disk.
-   - All operational logs (`runtime/executor-runtime-events.jsonl`) pass through a strict key-level sanitizer.
 
 ---
 
@@ -62,27 +69,52 @@
 
 ```
 agent-foundry-orchestrator/
-├── orchestrator.mjs                   # Main Orchestrator CLI & Lifecycle Entry
+├── orchestrator.mjs                   # Main Orchestrator CLI, DAG Multi-step & Lifecycle Entry
 ├── af-admin.mjs                       # Operator Administration CLI
-├── lib/
+├── bin/                               # CLI Wrappers
+│   ├── af-admin                       # Global CLI wrapper
+│   ├── cline-af                       # Portable Cline launcher with canonical AGENTS.md injection
+│   └── vertex-gemini-af               # Enterprise Vertex Gemini launcher
+├── approval/                          # Human Intent Gate
+│   ├── approval-schema.json           # Gate approval data schema
+│   ├── intent-gate.mjs                # Intent gate evaluation engine
+│   └── intent-policy.mjs              # Risk policy rules
+├── intent/                            # Intent & Asset Classification
+│   ├── action-validator.mjs           # Action payload validator
+│   └── asset-classifier.mjs           # Sensitive asset classifier (gov, config, schema, code)
+├── contracts/                         # Action Contracts
+│   ├── action-contract.schema.json    # JSON Schema for agent actions
+│   └── action-types.json              # Whitelist of permissible action types
+├── planner/                           # Autonomous Task Planning
+│   ├── planner.mjs                    # Goal decomposition & DAG batch scheduler
+│   └── schema/task-plan.schema.json   # Plan schema specification
+├── config/                            # Runtime Policy & Restrictions
+│   ├── executor-safety-profiles.json  # Safety profiles per executor
+│   └── operator-executors.json        # Operator executor dynamic override (factory clean: empty)
+├── lib/                               # Core Architectural Modules
 │   ├── acceptance.mjs                 # Acceptance command whitelist & sandbox execution
-│   ├── adapters.mjs                   # Unified Executor Adapters (Claude, Antigravity, Codex, Vertex)
-│   ├── executor-error-classifier.mjs  # Error taxonomy & classifier (TRANSIENT, RATE_LIMIT, ACCOUNT_POLICY)
+│   ├── adapters.mjs                   # Unified Executor Adapters (Claude, Vertex, Codex, Cline, Antigravity)
+│   ├── codex-planner.mjs              # Codex-driven planner interface
+│   ├── config.mjs                     # Cross-platform environment & path discovery
+│   ├── executor-error-classifier.mjs  # Error taxonomy (TRANSIENT, RATE_LIMIT, ACCOUNT_POLICY)
 │   ├── executor-ops.mjs               # Operator maintenance & gated recovery functions
 │   ├── executor-router.mjs            # Deterministic multi-executor routing pure function
-│   ├── executor-runtime-guard.mjs     # Circuit breaker state machine & concurrency slot guard
-│   ├── executor-status.mjs            # Global executor capability/availability loader
+│   ├── executor-runtime-guard.mjs     # Circuit breaker state machine & slot concurrency guard
+│   ├── executor-status.mjs            # Executor capability & availability status loader
 │   ├── governance.mjs                 # Governance bridge & publish verdict classifier
-│   ├── recovery.mjs                   # Crash recovery classifier & executor
+│   ├── operator-control.mjs           # Dynamic executor restrictions & user message injection
+│   ├── recovery.mjs                   # Idempotent crash recovery classifier & executor
 │   ├── reviews.mjs                    # Independent code review parser & binder
 │   ├── scheduler.mjs                  # Core task state machine
-│   ├── store.mjs                      # Atomic filesystem store
+│   ├── store.mjs                      # POSIX atomic filesystem store
 │   ├── tasklock.mjs                   # Exclusive task file lock manager
-│   └── vault-client.mjs               # MCP Vault Client wrapper
-├── tasks/                             # Task JSON file truth directory
-├── runtime/                           # Runtime state & sanitized audit events
-├── locks/                             # Exclusive execution locks
-├── tests/                             # Full automated test suite (91 unit/e2e/prod/invariant tests)
+│   ├── vault-client.mjs               # MCP Vault Client wrapper
+│   ├── workbench.mjs                  # Developer workbench prompt & experience control
+│   └── worktree.mjs                   # Git worktree parallel execution & DAG batch merging
+├── tasks/                             # Task JSON directory (factory clean: task-template.json + .gitkeep)
+├── runtime/                           # Runtime state & policies (factory clean: zero logs)
+├── locks/                             # Exclusive execution locks (.gitkeep)
+├── tests/                             # Automated test suite (146 tests, 100% passing)
 ├── FINAL_ARCHITECTURE.md              # Authoritative architectural blueprint
 ├── EXECUTOR_SAFETY_MODEL.md           # Authoritative executor safety and failure model
 ├── AGY_INCIDENT_POSTMORTEM.md         # Postmortem and design rationale for runtime guard

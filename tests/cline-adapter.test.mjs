@@ -67,7 +67,8 @@ test('CLINE-6: Daily rate limit / quota exceeded triggers fallback to cline-pass
 test('CLINE-7: Cline adapter sets max reasoning effort (xhigh) for deepseek fallback', async () => {
   // Verify deepseek thinking option in cline CLI supports xhigh
   const { execSync } = await import('node:child_process');
-  const helpOut = execSync('/home/relaret/bin/cline-af --help', { encoding: 'utf8' });
+  const { CLINE_LAUNCHER } = await import('../lib/config.mjs');
+  const helpOut = execSync(`"${CLINE_LAUNCHER}" --help`, { encoding: 'utf8' });
   assert.ok(helpOut.includes('--thinking <level>'), 'cline-af must support --thinking flag');
   assert.ok(helpOut.includes('xhigh'), 'cline-af must support xhigh thinking level');
 });

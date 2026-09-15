@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator
 
 > **企业级多智能体协同调度与控制核心 (Multi-Agent Task Orchestrator & Control Plane)**  
-> 当前版本：`Production Freeze v1` ｜ 自动化测试状态：**91 / 91 PASS (100%)**
+> 当前版本：`Production Release v1.2 (Full Capabilities)` ｜ 自动化测试状态：**146 / 146 PASS (100%)**
 
 ---
 
@@ -9,103 +9,80 @@
 
 **Agent Foundry Orchestrator** 是专为多大语言模型（LLM）与智能体执行器（Executor）打造的企业级**控制平面调度系统（Control Plane）**。
 
-在传统的单 Agent 开发中，AI 常常面临**幻觉无法自纠、缺乏独立审查、进程崩溃后状态丢失、API 封号导致系统卡死**等痛点。Agent Foundry Orchestrator 通过纯基于文件系统的轻量级确定性状态机，构建了一套**高度自主、具备自愈与博弈能力、严格安全隔离**的多 Agent 协作与验收闭环。
+在传统的单 Agent 开发中，AI 常常面临**幻觉无法自纠、缺乏独立审查、进程崩溃后状态丢失、高危操作缺乏人类意图门禁、多步骤开发冲突相互覆盖、API 封号导致死锁**等工程痛点。
+
+Agent Foundry Orchestrator 构建了一套**高度自主、具备意图门禁防越权、多任务 DAG 拆解、并行 Git Worktree 隔离、以及自动博弈自愈**的生产级控制系统，让多个主流模型在工业级流水线中安全协作。
 
 ---
 
-## 🌟 核心特性 (Key Features)
+## 🌟 核心能力矩阵 (Key Capabilities)
 
-### 1. 🔄 自动博弈与自愈闭环 (Self-Healing Loop)
-* **双模型独立博弈**：任务由 **Author（创作者）** 编写，并由物理隔离的 **Reviewer（审查者）** 执行严格的结构化代码审查（`PASS` / `NEEDS_FIX`）。
-* **精确会话恢复 (Exact Resume)**：当 Reviewer 提出修改意见时，系统自动接续原 Author 的会话上下文（Session Ref）进行精准修复，杜绝上下文丢失。
-* **零人工传话**：整个 Author -> Review -> Fix -> Re-Review 循环全自动推进，无需人类在多个模型之间复制粘贴提示词。
+### 1. 🧭 自主规划与 DAG 分批调度 (Autonomous Planner & DAG Scheduler)
+* **Goal 自动拆解**：基于 `planner/` 模块与 Codex Planner，将宏观目标结构化拆解为有序的子任务计划（`task-plan.schema.json`）。
+* **DAG 拓扑分批**：自动识别步骤间的依赖关系与并行批次（Batches），无依赖的步骤自动进入并行工作流，有依赖的步骤严格串行交付。
 
-### 2. 🛡️ 确定性验收门禁 (Deterministic Acceptance Gate)
-* **防越权执行**：验收测试命令仅来源于静态任务定义中的白名单，**大模型的输出绝对不能直接转化为终端执行命令**。
-* **最大重试上限**：设置严格的重试预算（Max Revisions，默认 3 次），避免死循环消耗 Token 配额。
+### 2. 🛡️ 人类意图门禁与动作合约 (Human Intent Gate & Action Contract)
+* **高危行为拦截**：集成 `intent/` 与 `approval/` 门禁系统。当任务涉及**系统架构变更、核心配置修改、高敏资产写入或大范围代码删除**时，自动触发 `WAITING_HUMAN` 阻断，必须获得人类明确批准方可执行。
+* **严格动作合约**：所有智能体行为必须满足 `contracts/action-contract.schema.json` 白名单约束，禁止未经声明的外部副作用。
 
-### 3. ⚡ 企业级断路器与受控恢复 (Runtime Guard & Gated Recovery)
-* **三维状态解耦**：严格分离 **Capability（机制能力）**、**Availability（账号/环境可用性）** 与 **Runtime Safety（并发与熔断）**。
-* **Fail-Closed 闭锁保护**：当遭遇 HTTP 403 Forbidden、违规（TOS Violation）或封号错误时，断路器自动闭锁为 `OPEN_MANUAL_RESET`，**严禁静默重试与降级**。
-* **受控准入流程**：通过 `af-admin` 执行沙箱隔离轻量探活（Probe），生成凭证后经操作员确认（Admit）方可解除熔断。
+### 3. 🌲 并行 Git Worktree 隔离沙箱 (Parallel Worktree Isolation)
+* **代码修改零冲突**：并行批次中的多个步骤通过 `lib/worktree.mjs` 在独立的 Git Worktree 临时分支中并发执行，完全隔离主工作区。
+* **合并与冲突闭锁**：各分支完成后自动 Merge 回主分支；一旦检测到合并冲突（Merge Conflict），系统立即触发 Fail-Closed 并记录冲突上下文，绝不暴力强推。
 
-### 4. 🔀 智能多执行器路由 (Multi-Executor Router)
-* **确定性漏斗算法**：基于纯函数根据任务能力需求、执行器可用性、熔断状态和优先级进行排序。
-* **主流模型适配**：已接入 **Vertex Gemini**（企业级适配器）、**Claude**、**Codex**、**Cline** 与 **Antigravity**。
-* **透明降级 (Fallback)**：仅在遭遇网络瞬时波动（Transient Fault）或配额限流（Rate Limit）时安全回退到备选执行器。
+### 4. 🔄 双模型独立博弈与自愈闭环 (Self-Healing Loop)
+* **创作者与独立审查者**：代码由 **Author** 产出，由物理隔离的 **Reviewer** 进行多维度 Review。
+* **精确会话恢复 (Exact Resume)**：Reviewer 提出 `NEEDS_FIX` 时，系统自动精准接续原 Author 会话上下文修复，全程零人工传话。
+* **确定性验收测试**：测试命令仅来源于静态白名单定义，AI 输出绝对不能随意作为 Shell 执行。
 
-### 5. 🛑 优雅停机与进程防孤儿 (Graceful Shutdown)
-* **信号感知回收**：完整监听 `SIGINT` (Ctrl+C) 与 `SIGTERM`。主调度器退出时，主动递归清理所有活跃的子进程树与临时句柄，彻底杜绝僵尸进程。
+### 5. ⚡ 企业级断路器与受控恢复 (Runtime Guard & Gated Recovery)
+* **三维状态解耦**：严格分离 **Capability（机制能力）**、**Availability（账号可用性）** 与 **Runtime Safety（并发与熔断）**。
+* **403 强闭锁保护**：遭遇 HTTP 403、TOS 违规或封号错误时，断路器自动闭锁为 `OPEN_MANUAL_RESET`，严禁盲目重试。
+* **沙箱隔离探活**：通过 `af-admin` 执行隔离沙箱轻量探活（Probe），生成证据后经操作员审核（Admit）方可解除熔断。
 
-### 6. 💾 零依赖文件级原子存储 (Atomic File Store)
-* **无需数据库**：不依赖 PostgreSQL、MySQL 或 Redis。
-* **零半状态保证**：任务状态持久化采用同目录原子重命名（POSIX Atomic Rename），确保并发读取时绝不出现 JSON 截断或脏读。
-* **进程互斥锁**：基于 `O_CREAT | O_EXCL` 文件排他锁，支持心跳刷新与 Dead PID 自动回收。
+### 6. 🔀 多执行器纯函数路由 (Multi-Executor Router)
+* **全平台兼容**：原生适配 **Vertex Gemini**（企业级适配器）、**Claude**、**Codex**、**Cline** 与 **Antigravity**。
+* **瞬时故障回退**：仅在瞬时网络错误（Transient Fault）或配额限流（Rate Limit）时安全 Fallback。
 
----
-
-## 🏛️ 核心架构与设计哲学 (Architecture & Principles)
-
-### 1. `ROLE != PLATFORM` (全局首要原则)
-* **平台是执行器 (Executor)**：Claude、Gemini、Codex 仅仅是执行代码的底层工人。
-* **角色是任务属性 (Task Role)**：Author、Reviewer、Verifier 由任务定义动态注入。
-* **动态分配**：同一个模型平台可以在任务 A 中担任 Author，在任务 B 中担任独立 Reviewer，严禁将平台与岗位进行任何形式的死板绑定。
-
-### 2. 控制平面与治理平面分离
-```
-[外部交互 / 用户输入]
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 控制平面 (Control Plane): agent-foundry-orchestrator         │
-│  - 状态流转: Created -> Author -> Review -> Fix -> Completed│
-│  - 故障自愈: 精确断点恢复、优雅停机、并发锁管理              │
-│  - 执行路由: Vertex Gemini / Claude / Codex / Cline         │
-└─────────────────────────────────────────────────────────────┘
-        │
-        │ (仅在任务要求受治理写回时，通过 MCP 协议受控接入)
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 治理平面 (Governance Plane): agent-foundry-vault + vault-mcp │
-│  - 知识真源: 架构标准、SOP、正式知识库                       │
-│  - 策略仲裁: L2 自动化发布 (auto_publish) / L3 人类门禁     │
-└─────────────────────────────────────────────────────────────┘
-```
+### 7. 🌍 真正的全平台零依赖可移植性 (Cross-Platform Portability)
+* **零硬编码主机路径**：全工程通过 `lib/config.mjs` 实现环境自适应，支持环境变量（`AF_GLOBAL_DIR`, `AF_VAULT_MCP_SERVER`）与当前机器 `$HOME` 自动推导，可在任何 Linux / WSL / Mac 机器上直接克隆运行。
+* **纯净出厂状态**：已清理所有历史测试任务与本地日志，默认出厂状态干净整洁。
 
 ---
 
-## 🔄 任务状态机生命周期 (Lifecycle State Machine)
+## 🏛️ 核心架构图 (Architecture Overview)
 
 ```
-        ┌─────────────┐
-        │   CREATED   │
-        └──────┬──────┘
-               │ 启动调度
-               ▼
-      ┌─────────────────┐
-      │ AUTHOR_RUNNING  │ ◄──────────┐
-      └────────┬────────┘            │
-               │ 代码产出            │ 自动修复
-               ▼                     │ (Exact Resume)
-      ┌─────────────────┐            │
-      │ REVIEW_RUNNING  │            │
-      └────────┬────────┘            │
-               │                     │
-       ┌───────┴────────┐            │
-       ▼                ▼            │
-[Review: PASS]   [Review: NEEDS_FIX] ┘
-       │
-       ▼
- 验收命令测试
-       │
- ┌─────┴─────┐
- ▼           ▼
-[PASS]     [FAIL] ──► 消耗重试预算修复 / 超额转为 FAILED
- │
- ▼
-┌─────────────────┐
-│    COMPLETED    │
-└─────────────────┘
+                       [ 目标输入 (Goal / Task Capsule) ]
+                                      │
+                                      ▼
+                      ┌──────────────────────────────┐
+                      │    任务规划层 (Planner Layer) │
+                      │  - 目标拆解为 DAG 步骤序列    │
+                      │  - 生成符合 Schema 的 Plan   │
+                      └──────────────┬───────────────┘
+                                     │
+                                     ▼
+                      ┌──────────────────────────────┐
+                      │ 人类意图门禁 (Intent Gate)    │
+                      │  - 评估高危动作与资产敏感度   │
+                      │  - 拦截高风险写入 -> 人工审批 │
+                      └──────────────┬───────────────┘
+                                     │ (Approved / Auto-passed)
+                                     ▼
+                      ┌──────────────────────────────┐
+                      │ 调度控制平面 (Scheduler Core) │
+                      │  - 并行分批: Git Worktree 隔离│
+                      │  - Author -> Reviewer 博弈闭环│
+                      │  - 确定性白名单验收命令执行   │
+                      └──────────────┬───────────────┘
+                                     │
+                 ┌───────────────────┴───────────────────┐
+                 ▼                                       ▼
+    ┌──────────────────────────┐            ┌──────────────────────────┐
+    │ 运行时守卫 (Runtime Guard)│            │ 知识库网桥 (Gov Bridge)   │
+    │  - 并发槽位限制 & 熔断器 │            │  - 仅在治理任务中按需连接 │
+    │  - 探活与受控准入 (Probe)│            │  - L2 自动发布 / L3 门禁 │
+    └──────────────────────────┘            └──────────────────────────┘
 ```
 
 ---
@@ -114,113 +91,127 @@
 
 ### 1. 环境准备
 * 运行环境：Node.js >= v20 (推荐 v24)
-* 操作系统：Linux / WSL2
+* 操作系统：Linux / macOS / Windows WSL2
 
-### 2. 运行一个任务
-编写一个标准的任务定义 JSON 文件（例如 `tasks/demo-task.json`）：
-```json
-{
-  "task_id": "TASK-DEMO-001",
-  "goal": "为工程增加一个带有单元测试的字符串反转工具函数",
-  "author_executor": "vertex-gemini",
-  "reviewer_executor": "claude",
-  "author_role": "software-engineer",
-  "reviewer_role": "code-reviewer",
-  "max_revisions": 3,
-  "acceptance_cmd": "node --test tests/demo.test.mjs"
-}
+### 2. 环境变量配置（可选）
+系统支持自动推导本地路径，也可以通过环境变量指定外部全局配置：
+```bash
+# 可选：指定外部 agent-foundry-global 规范路径
+export AF_GLOBAL_DIR="/path/to/agent-foundry-global"
+
+# 可选：指定外部 vault-mcp 治理服务路径
+export AF_VAULT_MCP_SERVER="/path/to/vault-mcp/server.mjs"
 ```
 
-启动 Orchestrator 进行全自动调度执行：
+### 3. 执行任务
+使用出厂自带的任务模板快速发起任务：
 ```bash
-node orchestrator.mjs run --task-file tasks/demo-task.json
+# 基于模板创建新任务
+cp tasks/task-template.json tasks/my-task.json
+
+# 启动调度器执行
+node orchestrator.mjs run --task-file tasks/my-task.json
 ```
 
-### 3. 运维控制台 CLI (`af-admin`)
-系统提供专用的轻量运维管理工具 [`af-admin.mjs`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/af-admin.mjs)：
-
+### 4. 运维管理 CLI (`af-admin`)
 ```bash
-# 1. 查看所有或特定执行器的三层状态 (Capability / Availability / Runtime)
+# 1. 查看所有执行器状态（能力、可用性、断路器）
 node af-admin.mjs executor status
-node af-admin.mjs executor status vertex-gemini
 
-# 2. 查看各模型熔断器列表与冷却状态
+# 2. 查看熔断器列表与冷却状态
 node af-admin.mjs circuit list
 
-# 3. 执行器账号解封后的受控沙箱隔离探活 (Probe)
+# 3. 熔断隔离探活与人工准入
 node af-admin.mjs executor recovery probe vertex-gemini
+node af-admin.mjs executor recovery admit vertex-gemini --evidence <probe_id> --reason "Billing fixed"
 
-# 4. 审核证据后准入解除熔断 (Admit)
-node af-admin.mjs executor recovery admit vertex-gemini \
-  --evidence <probe_evidence_id> \
-  --reason "Upstream billing issue resolved"
-
-# 5. 清理历史已完成任务 (默认 Dry-run 试运行)
+# 4. 清理历史任务 (支持 --confirm 执行真正清理)
 node af-admin.mjs tasks prune
-node af-admin.mjs tasks prune --confirm
-
-# 6. 审计日志归档轮转
-node af-admin.mjs logs rotate --days 7
 ```
 
-### 4. 故障与宕机恢复 (Crash Recovery)
-若宿主断电或进程意外崩溃，重启后执行无副作用的恢复扫描：
+### 5. 崩溃自动接续与恢复 (Crash Recovery)
 ```bash
-# 纯只读扫描受影响的任务
+# 只读扫描系统中所有待恢复任务
 node orchestrator.mjs recover --scan
 
-# 精确恢复指定任务（自动回收孤儿锁，重构断点会话）
-node orchestrator.mjs recover --task-id TASK-DEMO-001
+# 精准恢复指定任务断点
+node orchestrator.mjs recover --task-id <task_id>
 ```
 
 ---
 
-## 📂 项目目录结构 (Directory Structure)
+## 📂 项目完整结构 (Repository Structure)
 
 ```
 agent-foundry-orchestrator/
-├── orchestrator.mjs                   # 主控制平面调度器 CLI & 状态机核心
-├── af-admin.mjs                       # 运维管理专用 CLI 工具
+├── orchestrator.mjs                   # 主调度器 CLI、DAG 分批调度与生命周期入口
+├── af-admin.mjs                       # 运维管理 CLI
+├── bin/                               # 启动器封装
+│   ├── af-admin                       # 全局运维命令
+│   ├── cline-af                       # 跨平台 Cline CLI 包装器
+│   └── vertex-gemini-af               # 企业级 Vertex Gemini 包装器
+├── approval/                          # 人类意图门禁 (Human Intent Gate)
+│   ├── intent-gate.mjs                # 意图门禁求值引擎
+│   └── intent-policy.mjs              # 风险等级与审批策略
+├── intent/                            # 动作校验与资产分类
+│   ├── action-validator.mjs           # 动作负载校验器
+│   └── asset-classifier.mjs           # 资产敏感度分类器
+├── contracts/                         # 动作合约 (Action Contract)
+│   ├── action-contract.schema.json    # JSON Schema 动作合约
+│   └── action-types.json              # 允许的动作类型白名单
+├── planner/                           # 任务规划层 (Planner Layer)
+│   ├── planner.mjs                    # 规划器引擎与 DAG 分批逻辑
+│   └── schema/task-plan.schema.json   # 任务规划 Schema 规范
+├── config/                            # 策略配置
+│   ├── executor-safety-profiles.json  # 各执行器并发与熔断配置
+│   └── operator-executors.json        # 运维动态启停开关 (出厂默认纯净全开)
 ├── lib/                               # 核心架构模块
 │   ├── acceptance.mjs                 # 确定性验收测试执行引擎
-│   ├── adapters.mjs                   # 统一执行器适配器 (Vertex, Claude, Codex, Cline, Antigravity)
+│   ├── adapters.mjs                   # 统一执行器适配器 (Claude, Vertex, Codex, Cline, Antigravity)
+│   ├── codex-planner.mjs              # Codex 驱动的任务规划适配
+│   ├── config.mjs                     # 跨平台统一环境与路径发现层
 │   ├── executor-error-classifier.mjs  # 错误分类器 (Transient / RateLimit / AccountPolicy)
-│   ├── executor-ops.mjs               # 运维与受控恢复核心逻辑
+│   ├── executor-ops.mjs               # 运维工具与受控恢复核心
 │   ├── executor-router.mjs            # 纯函数确定性多执行器路由器
-│   ├── executor-runtime-guard.mjs     # 运行时守卫 (断路器状态机、并发槽位限制、日志脱敏)
+│   ├── executor-runtime-guard.mjs     # 运行时守卫 (断路器状态机、并发槽位、日志清洗)
 │   ├── executor-status.mjs            # 执行器能力与可用性状态投影器
 │   ├── governance.mjs                 # 知识库治理网桥 (GovernanceBridge)
+│   ├── operator-control.mjs           # 运行时拦截器与用户消息热注入
 │   ├── recovery.mjs                   # 宕机断点恢复分析与执行引擎
 │   ├── reviews.mjs                    # 独立 Reviewer 结果解析与绑定
 │   ├── scheduler.mjs                  # 任务状态机驱动核心
 │   ├── store.mjs                      # POSIX 原子文件持久化存储
 │   ├── tasklock.mjs                   # 基于文件系统的排他互斥锁与死锁回收
-│   └── vault-client.mjs               # MCP Vault 治理客户端
-├── tasks/                             # 任务持久化真源目录 (*.json)
-├── runtime/                           # 运行时状态、安全策略与清洗后的审计日志
+│   ├── vault-client.mjs               # MCP Vault 治理客户端
+│   ├── workbench.mjs                  # 开发者工作台控制与体验注入
+│   └── worktree.mjs                   # Git Worktree 并发分支创建与安全合并
+├── tasks/                             # 任务持久化目录 (出厂纯净: task-template.json + .gitkeep)
+├── runtime/                           # 运行时状态与安全策略 (出厂纯净: 零日志)
 ├── locks/                             # 进程互斥排他锁目录
-└── tests/                             # 自动化测试套件 (91 个用例全部通过)
+└── tests/                             # 全量自动化测试套件 (146 个用例全部通过)
 ```
 
 ---
 
-## 🧪 自动化测试验证 (Testing & Verification)
+## 🧪 自动化测试套件 (Test Suite)
 
 运行全量测试套件：
 ```bash
 node --test
 ```
 
-**测试矩阵覆盖 (91 / 91 PASS)**：
-* **单测与 E2E 闭环**：多工作区并行隔离、Review 修复循环、断点 Exact Resume；
-* **并发与锁竞争**：双实例锁互斥、Dead PID 锁抢占、防并发爆冲；
-* **错误注入与熔断**：403 Fail-Closed、限流退避、探活与准入工作流；
-* **进程优雅关闭**：SIGTERM 信号回收、活跃子进程终止、零孤儿句柄；
-* **架构不变性**：单注册表真源检验、单调度器检验、防凭证落盘检测、`ROLE != PLATFORM` 检验。
+**测试矩阵全绿通过 (146 / 146 PASS, 100%)**：
+* 🌲 **Git Worktree 并发与合并冲突**：多分支隔离并行写入、冲突检测安全 Fail-Closed；
+* 🧭 **Planner 规划层契约**：DAG 分批有效性、规划器与执行器职责隔离边界；
+* 🛡️ **Human Intent Gate 意图门禁**：高危写操作拦截、删除阻断、人工通过接续；
+* 🔄 **Author-Reviewer 双模型博弈**：结构化 Review 循环、精确会话接续 (Exact Resume)；
+* ⚡ **运行时安全与断路器**：403 强闭锁、限流退避、沙箱隔离探活 (Probe) 与准入 (Admit)；
+* 🛑 **优雅停机与进程防孤儿**：SIGTERM 信号回收、活跃子进程终止、零孤儿句柄；
+* 🏛️ **架构不变性**：单注册表真源检验、单调度器检验、防凭据落盘检测、`ROLE != PLATFORM` 检验。
 
 ---
 
-## 📚 详细规范文档索引 (Documentation)
+## 📚 详细规范文档索引 (Documentation Index)
 
 * 🏛️ [架构终态设计蓝图 (`FINAL_ARCHITECTURE.md`)](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/FINAL_ARCHITECTURE.md)
 * 🛡️ [执行器安全与熔断模型 (`EXECUTOR_SAFETY_MODEL.md`)](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/EXECUTOR_SAFETY_MODEL.md)

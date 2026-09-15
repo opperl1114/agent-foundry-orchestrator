@@ -1,5 +1,5 @@
 {
-  "scheduler_id": "af-orch-7e48d002",
+  "scheduler_id": "af-orch-73d82d7c",
   "shutdown_requested": false,
   "max_concurrent_tasks": 2,
   "queue": [],
@@ -9,92 +9,26 @@
   "stale_lock_recovered": [],
   "events": [
     {
-      "at": "2026-09-07T23:57:37.811Z",
+      "at": "2026-09-15T14:30:17.258Z",
       "kind": "enqueue",
-      "task_id": "TASK-20260908-9949088A"
+      "task_id": "TASK-P3H1"
     },
     {
-      "at": "2026-09-07T23:57:37.837Z",
-      "kind": "executor_routed",
-      "task_id": "TASK-20260908-9949088A",
-      "role": "author",
-      "primary": "vertex-gemini",
-      "fallbacks": [
-        "claude",
-        "codex"
-      ]
-    },
-    {
-      "at": "2026-09-07T23:57:37.849Z",
-      "kind": "task_started",
-      "task_id": "TASK-20260908-9949088A"
-    },
-    {
-      "at": "2026-09-07T23:57:41.587Z",
+      "at": "2026-09-15T14:30:17.268Z",
       "kind": "enqueue",
-      "task_id": "TASK-20260908-15D7650C"
+      "task_id": "TASK-P3H2"
     },
     {
-      "at": "2026-09-07T23:57:41.612Z",
-      "kind": "executor_routed",
-      "task_id": "TASK-20260908-15D7650C",
-      "role": "author",
-      "primary": "vertex-gemini",
-      "fallbacks": [
-        "claude",
-        "codex"
-      ]
+      "at": "2026-09-15T14:30:17.285Z",
+      "kind": "preflight_rejected",
+      "task_id": "TASK-P3H1",
+      "executor": "antigravity",
+      "availability": "UNAVAILABLE"
     },
     {
-      "at": "2026-09-07T23:57:41.624Z",
+      "at": "2026-09-15T14:30:17.303Z",
       "kind": "task_started",
-      "task_id": "TASK-20260908-15D7650C"
-    },
-    {
-      "at": "2026-09-08T00:00:46.492Z",
-      "kind": "executor_retry",
-      "task_id": "TASK-20260908-9949088A",
-      "attempt": 1,
-      "bounded_by": "max_executor_retries",
-      "error": "review run failed or unparseable: API Error: Connection refused — a firewall or proxy may be blocking it (ConnectionRefused)"
-    },
-    {
-      "at": "2026-09-08T00:00:47.580Z",
-      "kind": "executor_retry",
-      "task_id": "TASK-20260908-15D7650C",
-      "attempt": 1,
-      "bounded_by": "max_executor_retries",
-      "error": "review run failed or unparseable: API Error: Connection refused — a firewall or proxy may be blocking it (ConnectionRefused)"
-    },
-    {
-      "at": "2026-09-08T00:03:43.032Z",
-      "kind": "executor_fallback",
-      "task_id": "TASK-20260908-9949088A",
-      "from": "vertex-gemini",
-      "to": "claude",
-      "category": "TRANSIENT_FAULT",
-      "remaining_fallbacks": [
-        "codex"
-      ]
-    },
-    {
-      "at": "2026-09-08T00:03:46.145Z",
-      "kind": "executor_fallback",
-      "task_id": "TASK-20260908-15D7650C",
-      "from": "vertex-gemini",
-      "to": "claude",
-      "category": "TRANSIENT_FAULT",
-      "remaining_fallbacks": [
-        "codex"
-      ]
-    },
-    {
-      "at": "2026-09-08T00:06:50.651Z",
-      "kind": "executor_retry",
-      "task_id": "TASK-20260908-15D7650C",
-      "attempt": 1,
-      "bounded_by": "max_executor_retries",
-      "error": "author run failed: API Error: Connection refused — a firewall or proxy may be blocking it (ConnectionRefused)"
+      "task_id": "TASK-P3H2"
     }
   ]
 }

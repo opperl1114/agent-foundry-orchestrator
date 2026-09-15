@@ -7,6 +7,18 @@ locks/*
 runtime/runs/*
 !runtime/runs/.gitkeep
 runtime/archive/*
+runtime/operator-activity/*
+runtime/operator-input/*
+runtime/operator-received/*
+
+# Historical execution tasks (keep only standard templates)
+tasks/*.json
+!tasks/task-template.json
+!tasks/demo-task.json
+!tasks/.gitkeep
+
+# Runtime generated event logs (auto-created on run)
+runtime/executor-runtime-events.jsonl
 
 # Sensitive credentials & environment files
 .env

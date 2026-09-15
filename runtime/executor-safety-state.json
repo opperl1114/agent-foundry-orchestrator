@@ -5,11 +5,15 @@
     "reason": null,
     "opened_at": null,
     "cooldown_until": null,
-    "last_reset": {
-      "reset_by": "relaret",
-      "reason": "new account replaced old blocked account",
-      "reset_time": "2026-09-07T01:51:00.092Z"
-    }
+    "last_reset": null
+  },
+  "claude": {
+    "state": "CLOSED",
+    "category": null,
+    "reason": null,
+    "opened_at": null,
+    "cooldown_until": null,
+    "last_reset": null
   },
   "codex": {
     "state": "CLOSED",
@@ -17,11 +21,15 @@
     "reason": null,
     "opened_at": null,
     "cooldown_until": null,
-    "last_reset": {
-      "reset_by": "relaret",
-      "reason": "False positive on test duration 78.748403ms and LCU 403 test mocks",
-      "reset_time": "2026-09-07T09:36:09.071Z"
-    }
+    "last_reset": null
+  },
+  "vertex-gemini": {
+    "state": "CLOSED",
+    "category": null,
+    "reason": null,
+    "opened_at": null,
+    "cooldown_until": null,
+    "last_reset": null
   },
   "cline": {
     "state": "CLOSED",
@@ -29,10 +37,6 @@
     "reason": null,
     "opened_at": null,
     "cooldown_until": null,
-    "last_reset": {
-      "reset_by": "cline_fallback",
-      "reason": "switching from default to fallback cline-pass/deepseek-v4-flash",
-      "reset_time": "2026-09-07T14:39:46.074Z"
-    }
+    "last_reset": null
   }
 }

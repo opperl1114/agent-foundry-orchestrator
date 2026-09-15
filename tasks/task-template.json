@@ -1,0 +1,10 @@
+{
+  "task_id": "TASK-TEMPLATE-001",
+  "goal": "Implement a string reversal utility with unit test verification",
+  "author_executor": "auto",
+  "reviewer_executor": "auto",
+  "author_role": "software-engineer",
+  "reviewer_role": "code-reviewer",
+  "max_revisions": 3,
+  "acceptance_cmd": "node --test tests/example.test.mjs"
+}

@@ -32,7 +32,10 @@ import * as orchestrator from '../orchestrator.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 
 const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
-const GATEWAY_SERVER_PATH = '/mnt/c/Users/relaret/agent-foundry-gateway/server.mjs';
+const GATEWAY_SERVER_PATH = process.env.AF_GATEWAY_SERVER ||
+  (existsSync(join(ROOT_DIR, '../agent-foundry-gateway/server.mjs'))
+    ? join(ROOT_DIR, '../agent-foundry-gateway/server.mjs')
+    : '/mnt/c/Users/relaret/agent-foundry-gateway/server.mjs');
 
 function createTempDir(prefix = 'af-cg-test-') {
   return mkdtempSync(join(tmpdir(), prefix));
@@ -288,7 +291,10 @@ test('TEST CG-3: Task进入现有 Orchestrator (Orchestrator -> Scheduler -> Rou
 // TEST CG-4: Gateway 不能直接调用 executor
 // ----------------------------------------------------------------------------
 test('TEST CG-4: Gateway不能直接调用executor (架构边界与静态代码不变性)', () => {
-  const gatewayDir = '/mnt/c/Users/relaret/agent-foundry-gateway';
+  const gatewayDir = process.env.AF_GATEWAY_DIR ||
+    (existsSync(join(ROOT_DIR, '../agent-foundry-gateway'))
+      ? join(ROOT_DIR, '../agent-foundry-gateway')
+      : '/mnt/c/Users/relaret/agent-foundry-gateway');
   assert(existsSync(gatewayDir), 'agent-foundry-gateway must exist');
 
   // Collect all JS/MJS source files in gateway

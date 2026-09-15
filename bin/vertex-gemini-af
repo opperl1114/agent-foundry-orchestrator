@@ -12,8 +12,9 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
+import { CANONICAL_AGENTS_MD } from '../lib/config.mjs';
 
-const CANONICAL = '/mnt/c/Users/relaret/agent-foundry-global/AGENTS.md';
+const CANONICAL = CANONICAL_AGENTS_MD;
 
 if (!existsSync(CANONICAL)) {
   process.stderr.write(`vertex-gemini-af: canonical governance not readable: ${CANONICAL}\n`);

@@ -13,10 +13,11 @@
 
 set -u
 
-CLINE_BIN="${CLINE_BIN:-/home/relaret/.nvm/versions/node/v24.20.0/bin/cline}"
-GOV_DIR=/mnt/c/Users/relaret/agent-foundry-global
-CANONICAL="$GOV_DIR/AGENTS.md"
-VAULT_ROOT_VALUE=/mnt/c/Users/relaret/agent-foundry-vault
+CLINE_BIN="${CLINE_BIN:-$(command -v cline 2>/dev/null || echo "$HOME/.nvm/versions/node/v24.20.0/bin/cline")}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+GOV_DIR="${AF_GLOBAL_DIR:-$(cd "$SCRIPT_DIR/../../agent-foundry-global" 2>/dev/null && pwd || echo "/mnt/c/Users/relaret/agent-foundry-global")}"
+CANONICAL="${AF_CANONICAL_AGENTS_MD:-$GOV_DIR/AGENTS.md}"
+VAULT_ROOT_VALUE="${VAULT_ROOT:-$(cd "$SCRIPT_DIR/../../agent-foundry-vault" 2>/dev/null && pwd || echo "/mnt/c/Users/relaret/agent-foundry-vault")}"
 
 if [ ! -x "$CLINE_BIN" ]; then
     CLINE_BIN=$(command -v cline 2>/dev/null || true)
