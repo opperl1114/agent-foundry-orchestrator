@@ -8,7 +8,41 @@
 //   5. Canonical scopes: SYSTEM, PROJECT, LOCAL.
 
 import { existsSync, realpathSync } from 'node:fs';
-import { resolve, dirname, basename, join } from 'node:path';
+import { resolve, dirname, basename, join, isAbsolute, relative } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+// Classification base root. Relative targets resolve against this instead of
+// process.cwd(), so the same target yields the same verdict no matter which
+// directory the process was started from.
+export const ROOT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+const BASE_ROOT = (() => {
+  const p = process.env.AF_TARGET_ROOT ? resolve(process.env.AF_TARGET_ROOT) : ROOT_DIR;
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
+})();
+
+// Real temporary roots only. A directory that merely happens to be named "tmp"
+// is not a cache location, and an ancestor temp segment (a checkout living
+// under /tmp) must never decide the verdict for a path inside the repository.
+const TEMP_ROOTS = [tmpdir(), '/tmp', '/var/tmp', process.env.TEMP, process.env.TMP]
+  .filter(Boolean)
+  .map((p) => resolve(p));
+
+function isRealTempPath(absolutePath) {
+  return TEMP_ROOTS.some((root) => absolutePath === root || absolutePath.startsWith(`${root}/`));
+}
+
+// The subpath relative to BASE_ROOT when the target lives inside it, else null.
+function relativeToBase(absolutePath) {
+  const rel = relative(BASE_ROOT, absolutePath);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
+  return rel;
+}
 
 export const TARGET_ASSET_TYPES = Object.freeze({
   GOVERNANCE: 'GOVERNANCE',
@@ -57,7 +91,7 @@ export function resolveCanonicalTarget(inputPath = '') {
     };
   }
 
-  const absolutePath = resolve(raw);
+  const absolutePath = isAbsolute(raw) ? resolve(raw) : resolve(BASE_ROOT, raw);
 
   // 1. File or directory physically exists: resolve realpath
   if (existsSync(absolutePath)) {
@@ -179,7 +213,12 @@ export function classifyTargetAsset(targetPath = '', capsule = {}) {
       };
     }
 
-    if (/(^|\/|\\)(tmp|temp|cache|build|\.cache)($|\/|\\)/i.test(lowerCanonical)) {
+    const relativePath = relativeToBase(canonicalPath);
+    const looksLikeTempCache = relativePath
+      ? /(^|\/|\\)(tmp|temp|cache|build|\.cache)($|\/|\\)/i.test(relativePath)
+      : isRealTempPath(canonicalPath);
+
+    if (looksLikeTempCache) {
       return {
         type: TARGET_ASSET_TYPES.TEMP_CACHE,
         path: resolved.raw_path || canonicalPath,

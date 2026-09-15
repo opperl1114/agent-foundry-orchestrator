@@ -11,6 +11,8 @@
 //   TEST AC-H4-1: WAITING_HUMAN 产出非空 audit_evidence
 //   TEST AC-H4-2: symlink 路径解析证据被如实记录到 audit_evidence 中
 //   TEST AC-H5-1: Proposal 注入伪造的 audit_evidence 不会被采信为权威证据 (隔离/防污染)
+//   TEST AC-H6-1: 分类结果与 CWD 无关（同一相对路径在任意工作目录下结论一致）
+//   TEST AC-H6-2: TEMP_CACHE 只由目标自身的路径段或真实临时根决定
 
 import { test } from 'node:test';
 import assert from 'node:assert';
@@ -20,9 +22,12 @@ import {
   symlinkSync,
   mkdirSync,
   rmdirSync,
+  mkdtempSync,
+  rmSync,
   existsSync,
   readFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -419,4 +424,57 @@ test('TEST AC-H5-1: Proposal 注入伪造的 audit_evidence 不会被采信为�
   assert(Array.isArray(effective.untrusted_proposal_evidence), 'Untrusted proposal evidence must be quarantined');
   assert.strictEqual(effective.untrusted_proposal_evidence.length, 2);
   assert.strictEqual(effective.untrusted_proposal_evidence[0].rule, 'FAKE_AUTO_APPROVE');
+});
+
+// ----------------------------------------------------------------------------
+// TEST AC-H6-1: 分类结果与 CWD 无关
+// ----------------------------------------------------------------------------
+test('TEST AC-H6-1: 分类结果与 CWD 无关（同一相对路径在任意工作目录下结论一致）', () => {
+  const relativeTarget = 'docs/guidelines.md';
+  const before = classifyTargetAsset(relativeTarget);
+
+  // The historical defect: a relative path resolved against process.cwd(), so a
+  // checkout under /tmp reclassified the same document as TEMP_CACHE.
+  const originalCwd = process.cwd();
+  const altCwd = mkdtempSync(join(tmpdir(), 'ac-h6-cwd-'));
+  try {
+    process.chdir(altCwd);
+    const after = classifyTargetAsset(relativeTarget);
+
+    assert.strictEqual(after.type, before.type, 'Asset type must not depend on the process working directory');
+    assert.strictEqual(after.scope, before.scope, 'Impact scope must not depend on the process working directory');
+    assert.strictEqual(after.canonical_path, before.canonical_path, 'Canonical path must not depend on the process working directory');
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(altCwd, { recursive: true, force: true });
+  }
+
+  assert.strictEqual(before.type, TARGET_ASSET_TYPES.DOCUMENT, 'A repo-relative document stays a DOCUMENT');
+  assert.strictEqual(before.scope, IMPACT_SCOPES.PROJECT);
+});
+
+// ----------------------------------------------------------------------------
+// TEST AC-H6-2: TEMP_CACHE 只由目标自身的路径段或真实临时根决定
+// ----------------------------------------------------------------------------
+test('TEST AC-H6-2: TEMP_CACHE 只由目标自身的路径段或真实临时根决定', () => {
+  // A repo-relative path whose ancestors happen to be temp dirs is NOT a cache asset
+  assert.strictEqual(
+    classifyTargetAsset('docs/guidelines.md').type,
+    TARGET_ASSET_TYPES.DOCUMENT,
+    'Ancestor temp segments must not reclassify a repository document'
+  );
+
+  // A cache directory inside the project IS a cache asset
+  assert.strictEqual(
+    classifyTargetAsset('build/artifact.js').type,
+    TARGET_ASSET_TYPES.TEMP_CACHE,
+    'A project build/ directory is a cache asset'
+  );
+
+  // A target inside a real temporary root IS a cache asset
+  assert.strictEqual(
+    classifyTargetAsset(join(tmpdir(), 'af-ac-h6-cache')).type,
+    TARGET_ASSET_TYPES.TEMP_CACHE,
+    'A target under the real temporary root is a cache asset'
+  );
 });
