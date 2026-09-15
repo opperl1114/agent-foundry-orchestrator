@@ -8,13 +8,63 @@
 | **Frozen At** | 2026-09-15T22:30:00+08:00 |
 | **Architecture Reference** | [`FINAL_ARCHITECTURE.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/FINAL_ARCHITECTURE.md) |
 | **Safety Model Reference** | [`EXECUTOR_SAFETY_MODEL.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/EXECUTOR_SAFETY_MODEL.md) |
-| **Regression Test Status** | **146 / 146 PASS (100%)** |
+| **Regression Test Status** | **171 / 171 PASS (100%)** — verified on a CLEAN CLONE (`git clone . /tmp/verify && node --test`), not only on the author's checkout |
+| **Last Hardened At** | 2026-09-16 (see Post-freeze Hardening below) |
 | **Execution Engine** | Multi-step DAG state machine (`orchestrator.mjs` + `lib/scheduler.mjs` + `lib/worktree.mjs`) |
 | **Storage Architecture** | Filesystem atomic rename (`saveTaskAtomic`), zero SQLite/Postgres/Redis dependencies |
 
 ---
 
-## Completed Phases Traceability
+## Post-freeze Hardening (B0 / B1)
+
+The v1.2 baseline was green only on the author's machine. A clean clone registered
+133 of 146 tests and failed 15 of them, so the recorded "146 / 146" could not be
+reproduced. Batches B0 (make the baseline trustworthy) and B1 (five critical
+safety defects) were applied on top of it.
+
+**B0 — trustworthy baseline**
+
+| Commit | Change |
+| :--- | :--- |
+| `c55daf0` | Restore executable bits on the 9 shebang-carrying launchers/scripts — a clean clone had none, so every direct `spawn(argv[0])` failed with EACCES. |
+| `0b94436` | Stop tracking `runtime/scheduler.json` (per-instance state; every test run left the worktree dirty). |
+| `ded6285` | Make asset classification cwd-independent: resolve relative targets against an explicit base root and decide TEMP_CACHE from the target's own path, not from an ancestor directory. |
+| `9ecb08c` | Add `fixtures/gateway/` — the conversation-gateway tests hard-imported the sibling gateway repo and died at load time without it (15 cases never registered). |
+| `a51745d` | Add `fixtures/agent-foundry-global/executors/` and drive the adapter-contract tests through stub launchers, so the capability and 6A/CLINE cases no longer need the registry or the signed-in provider CLIs. |
+
+**B1 — critical safety defects**
+
+| Commit | Change |
+| :--- | :--- |
+| `c9a43c3` | A 403/ToS refusal reported on stdout is `ACCOUNT_POLICY` again (codex reports on stdout with an empty stderr), instead of a retryable transient fault that never opened the breaker. |
+| `f9b8fb7` | Unify cancellation: codex/antigravity/claude cancelled through `terminateRun`, so a cancelled run was classified retryable and the task could be re-run or FAILED-overwritten. A cancellation is now sticky. |
+| `6892f12` | A publish counts only when the vault says `published === true` / `published_path`; `policy_decision: auto_publish` is a strategy class, not an outcome, and no longer completes a task. |
+| `2a9b7d4` | Enforce a real acceptance allowlist (`config/acceptance-allowlist.json`), bind the acceptance anchor so an edited task file fails closed as `TASK_FILE_TAMPERED`, scrub the acceptance child's environment, and refuse a workspace inside the orchestrator root. |
+| `dfcccc3` | Circuit state is written atomically and an unreadable state file now fails CLOSED (every breaker opens, evidence quarantined, `STATE_CORRUPTION` audited) instead of silently reopening them. |
+
+**Verified after B1** (clean clone, Node v24):
+
+```text
+ℹ tests 171
+ℹ pass 171
+ℹ fail 0
+ℹ skipped 0
+```
+
+`git status --porcelain` is empty after a full run, and the plan's acceptance
+probes now read:
+
+```text
+corrupt state file        -> OPEN_MANUAL_RESET / canExecute=false   (was CLOSED / true)
+403 on stdout             -> ACCOUNT_POLICY / retryable=false       (was TRANSIENT_FAULT)
+auto_publish+published:false -> unknown                             (was published)
+```
+
+Remaining batches from the same review (B2 source-of-truth/recovery, B3 minors
+and hygiene) are still open.
+
+---
+
 
 | Phase | Milestone Name | Key Architectural Deliverable |
 | :--- | :--- | :--- |
@@ -114,7 +164,7 @@ agent-foundry-orchestrator/
 ├── tasks/                             # Task JSON directory (factory clean: task-template.json + .gitkeep)
 ├── runtime/                           # Runtime state & policies (factory clean: zero logs)
 ├── locks/                             # Exclusive execution locks (.gitkeep)
-├── tests/                             # Automated test suite (146 tests, 100% passing)
+├── tests/                             # Automated test suite (171 tests, 100% passing on a clean clone)
 ├── FINAL_ARCHITECTURE.md              # Authoritative architectural blueprint
 ├── EXECUTOR_SAFETY_MODEL.md           # Authoritative executor safety and failure model
 ├── AGY_INCIDENT_POSTMORTEM.md         # Postmortem and design rationale for runtime guard

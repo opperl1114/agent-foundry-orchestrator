@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator — Architecture Specification (Full Stack v1.2)
 
 > **当前架构版本：** Production Release v1.2 (Full Capabilities Baseline)  
-> **自动化测试状态：** **146 / 146 PASS (100%)**  
+> **自动化测试状态：** **171 / 171 PASS (100%)**  
 > **设计核心：** 零外部数据库、零常驻守护进程、纯文件系统原子持久化、环境自适应无硬编码路径。
 
 ---
@@ -162,7 +162,7 @@ graph TD
 
 ---
 
-## 8. 自动化测试套件矩阵 (146 Tests All Green)
+## 8. 自动化测试套件矩阵 (171 Tests All Green)
 
 | 测试模块 | 用例数 | 覆盖核心保障 |
 | :--- | :---: | :--- |
@@ -170,22 +170,26 @@ graph TD
 | `tests/worktree.test.mjs` | 5 | Git Worktree 独立分支创建、并发写入合并、拓扑分批成环检测 |
 | `tests/planner-layer.test.mjs` | 6 | Planner 目标拆解、Plan Schema 校验、执行器解耦边界 |
 | `tests/human-intent-gate.test.mjs` | 9 | 高危动作与敏感资产拦截、人类批准继续、驳回取消、不可调用执行器 |
-| `tests/action-contract.test.mjs` | 4 | Action Contract 合约校验、白名单拦截 |
-| `tests/action-contract-hardening.test.mjs` | 6 | 合约格式加固、极端异常参数防御 |
+| `tests/action-contract.test.mjs` | 8 | Action Contract 合约校验、白名单拦截 |
+| `tests/action-contract-hardening.test.mjs` | 12 | 合约格式加固、极端异常参数防御、分类结果与 CWD 无关 |
 | `tests/production-readiness.test.mjs` | 5 | 异常崩溃恢复、403 强闭锁、SIGTERM 优雅停机、状态损坏检测、双实例互斥锁 |
-| `tests/architecture-invariant.test.mjs` | 5 | 单注册表检验、单调度器检验、防凭证泄露、防治理绕过、ROLE != PLATFORM |
+| `tests/architecture-invariant.test.mjs` | 5 | 单注册表检验、单调度器检验、防凭证泄露、防治理绕过（仅 published 才算发布）、ROLE != PLATFORM |
 | `tests/shutdown.test.mjs` | 4 | SIGTERM 进程树自动回收、孤儿句柄消除 |
-| `tests/enterprise-adapter.test.mjs` | 5 | Vertex Gemini 企业适配器接口一致性与角色解耦 |
-| `tests/cline-adapter.test.mjs` | 8 | Cline 适配器接口规范、DeepSeek 思考等级支持、日志 429 穿透防误报 |
+| `tests/enterprise-adapter.test.mjs` | 5 | Vertex Gemini 企业适配器接口一致性与角色解耦（stub launcher） |
+| `tests/cline-adapter.test.mjs` | 8 | Cline 适配器接口规范、DeepSeek 推理等级参数、日志 429 穿透防误报 |
 | `tests/gated-recovery.test.mjs` | 8 | 熔断探活 (Probe)、伪造证据拦截、准入 (Admit) 恢复机制 |
 | `tests/executor-router.test.mjs` | 8 | 纯函数确定性路由漏斗与透明降级 |
 | `tests/executor-ops.test.mjs` | 5 | 运维状态查询、熔断器列表、审计证据持久化 |
 | `tests/operator-maintenance.test.mjs` | 6 | 历史任务修剪 (Prune)、日志轮转 (Rotate)、冷却状态投影 |
 | `tests/runtime-safety.test.mjs` | 7 | 并发槽位限制、防并发打崩、死循环检测、熔断跨执行器隔离 |
 | `tests/cancellation.test.mjs` | 3 | 精确 runId 进程终止、任务取消隔离 |
+| `tests/cancellation-real-adapters.test.mjs` | 4 | codex/claude/antigravity 真实适配器取消证据、取消粘滞不可覆盖 |
 | `tests/concurrency.test.mjs` | 9 | 并行任务状态与会话隔离、stale 锁抢占 |
-| `tests/governance.test.mjs` | 9 | L2 自动发布、L3 人工门禁、拒绝不可降级 |
+| `tests/governance.test.mjs` | 11 | L2 自动发布、L3 人工门禁、拒绝不可降级、策略类别不等于发布结果 |
 | `tests/hardening.test.mjs` | 7 | 验收命令白名单加固、任务文件原子写 |
 | `tests/recovery.test.mjs` | 11 | 断点接续精准度、死锁安全回收、幂等恢复 |
-| `tests/conversation-gateway.test.mjs` | 4 | MCP Gateway 接口接入与任务派发 |
-| **总计** | **146** | **100% PASS** |
+| `tests/conversation-gateway.test.mjs` | 6 | MCP Gateway 接口接入与任务派发（自带夹具） |
+| `tests/executor-error-classifier.test.mjs` | 7 | stdout/stderr 403 与 TOS 一律 fail-closed、测试日志 403 不误报 |
+| `tests/acceptance-allowlist.test.mjs` | 6 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
+| `tests/runtime-guard-state.test.mjs` | 4 | 熔断状态原子写、损坏 fail-closed、纯读查询、冷却投影 |
+| **总计** | **171** | **100% PASS** |
