@@ -12,7 +12,13 @@ import assert from 'node:assert';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { VERTEX_STUB } from './helpers/executor-stub-launcher.mjs';
 import { VertexGeminiAdapter, ADAPTERS } from '../lib/adapters.mjs';
+
+// These tests assert the adapter contract (ExecutorResult shape, exact resume,
+// cancel evidence), not whether the Vertex CLI happens to be installed and
+// signed in on this machine: drive them through the stub launcher.
+process.env.VERTEX_GEMINI_LAUNCHER ??= VERTEX_STUB;
 
 const WORK = mkdtempSync(join(tmpdir(), 'af-6a-test-'));
 after(() => {

@@ -9,6 +9,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert';
+import { tmpdir } from 'node:os';
+import './helpers/executors-fixture.mjs';
 import { ClineAdapter, ADAPTERS } from '../lib/adapters.mjs';
 import { resolveExecutorRoute } from '../lib/executor-router.mjs';
 
@@ -65,12 +67,45 @@ test('CLINE-6: Daily rate limit / quota exceeded triggers fallback to cline-pass
 });
 
 test('CLINE-7: Cline adapter sets max reasoning effort (xhigh) for deepseek fallback', async () => {
-  // Verify deepseek thinking option in cline CLI supports xhigh
-  const { execSync } = await import('node:child_process');
-  const { CLINE_LAUNCHER } = await import('../lib/config.mjs');
-  const helpOut = execSync(`"${CLINE_LAUNCHER}" --help`, { encoding: 'utf8' });
-  assert.ok(helpOut.includes('--thinking <level>'), 'cline-af must support --thinking flag');
-  assert.ok(helpOut.includes('xhigh'), 'cline-af must support xhigh thinking level');
+  const { rmSync, readFileSync } = await import('node:fs');
+  const { CLINE_STUB, STUB_ARGV_LOG } = await import('./helpers/executor-stub-launcher.mjs');
+
+  // Assert the ARGUMENTS the adapter builds, not whether the vendor CLI is
+  // installed: without an explicit effort, a deepseek model must be driven at
+  // xhigh reasoning effort.
+  rmSync(STUB_ARGV_LOG, { force: true });
+  const previousLauncher = process.env.CLINE_LAUNCHER;
+  const previousLog = process.env.AF_STUB_ARGV_LOG;
+  process.env.CLINE_LAUNCHER = CLINE_STUB;
+  process.env.AF_STUB_ARGV_LOG = STUB_ARGV_LOG;
+
+  try {
+    const result = await ClineAdapter.run({
+      task_id: 'TASK-CLINE-7',
+      assigned_role: 'author',
+      prompt: 'Verify deepseek fallback reasoning effort',
+      model: 'cline-pass/deepseek-v4-flash',
+      cwd: tmpdir(),
+      timeout_ms: 15000,
+    });
+
+    assert.strictEqual(result.status, 'completed', 'stub launcher run must complete');
+
+    const invocations = readFileSync(STUB_ARGV_LOG, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+    const args = invocations.at(-1);
+
+    const effortIndex = args.indexOf('--thinking');
+    assert.ok(effortIndex >= 0, 'the adapter must pass --thinking for a deepseek model');
+    assert.strictEqual(args[effortIndex + 1], 'xhigh', 'deepseek models must run at xhigh reasoning effort');
+  } finally {
+    if (previousLauncher === undefined) delete process.env.CLINE_LAUNCHER;
+    else process.env.CLINE_LAUNCHER = previousLauncher;
+    if (previousLog === undefined) delete process.env.AF_STUB_ARGV_LOG;
+    else process.env.AF_STUB_ARGV_LOG = previousLog;
+  }
 });
 
 test('CLINE-8: Target workspace test logs containing HTTP 429 must NOT trigger RATE_LIMIT classification', async () => {

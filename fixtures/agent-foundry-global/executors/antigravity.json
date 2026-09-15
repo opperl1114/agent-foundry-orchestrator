@@ -1,0 +1,14 @@
+{
+  "executor_id": "antigravity",
+  "display_name": "Antigravity (agy)",
+  "platform": "google",
+  "capabilities_audit": {
+    "non_interactive_print": "PASS",
+    "structured_output": "PASS",
+    "exact_resume": "PASS",
+    "mcp_unattended": "PASS"
+  },
+  "blockers": [
+    "ACCOUNT_DISABLED_403: upstream returned 403 Terms of Service violation on 2026-09-05 (account-level blocker, not a capability failure)"
+  ]
+}

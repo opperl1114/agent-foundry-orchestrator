@@ -1,0 +1,12 @@
+{
+  "executor_id": "codex",
+  "display_name": "Codex CLI",
+  "platform": "openai",
+  "capabilities_audit": {
+    "non_interactive_print": "PASS",
+    "structured_output": "PASS",
+    "exact_resume": "PASS",
+    "mcp_unattended": "PASS"
+  },
+  "blockers": []
+}

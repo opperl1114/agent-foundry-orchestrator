@@ -1,0 +1,12 @@
+{
+  "executor_id": "vertex-gemini",
+  "display_name": "Vertex Gemini (enterprise)",
+  "platform": "cloud-enterprise",
+  "capabilities_audit": {
+    "non_interactive_print": "PASS",
+    "structured_output": "PASS",
+    "exact_resume": "PASS",
+    "mcp_unattended": "PASS"
+  },
+  "blockers": []
+}

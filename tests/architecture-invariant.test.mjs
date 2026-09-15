@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import './helpers/executors-fixture.mjs';
 import { loadExecutorStatus, EXECUTORS_DIR } from '../lib/executor-status.mjs';
 import { resolveExecutorRoute } from '../lib/executor-router.mjs';
 import { ADAPTERS } from '../lib/adapters.mjs';

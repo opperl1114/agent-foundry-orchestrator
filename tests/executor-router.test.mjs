@@ -16,6 +16,7 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import './helpers/executors-fixture.mjs';
 import {
   resolveExecutorRoute,
   loadCapabilityMap,
