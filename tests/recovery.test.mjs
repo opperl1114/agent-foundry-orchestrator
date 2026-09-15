@@ -12,6 +12,7 @@ import { recoverTask } from '../lib/recovery.mjs';
 import { continueTask, resumeGovernance } from '../orchestrator.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
 import { acquireTaskLock, readLock } from '../lib/tasklock.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 

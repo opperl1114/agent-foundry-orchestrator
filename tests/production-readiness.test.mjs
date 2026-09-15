@@ -16,6 +16,7 @@ import {
   existsSync,
   mkdirSync,
 } from 'node:fs';
+import './helpers/acceptance-allowlist.mjs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';

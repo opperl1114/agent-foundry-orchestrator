@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { after, before } from 'node:test';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 const WORK = mkdtempSync(join(tmpdir(), 'af-p4c-work-'));
 after(() => { rmSync(WORK, { recursive: true, force: true }); });

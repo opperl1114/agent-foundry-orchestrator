@@ -1,0 +1,7 @@
+{
+  "$comment": "Trusted acceptance command allowlist. The acceptance command is a trust anchor: it comes from a task definition and is executed with the operator's privileges, so a task may only run a command that is listed here. Override with AF_ACCEPTANCE_ALLOWLIST (an absolute path to a file of the same shape) when a deployment legitimately needs a different command set.",
+  "allowed": [
+    { "command": "node", "args_prefix": ["--test"] },
+    { "command": "npm", "args_prefix": ["test"] }
+  ]
+}

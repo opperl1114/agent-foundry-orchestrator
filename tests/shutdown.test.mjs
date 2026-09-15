@@ -18,6 +18,7 @@ import {
   terminateAllActiveRuns,
   registerActiveRun,
 } from '../lib/adapters.mjs';
+import './helpers/acceptance-allowlist.mjs';
 import { installGracefulShutdown } from '../orchestrator.mjs';
 
 let seq = 0;

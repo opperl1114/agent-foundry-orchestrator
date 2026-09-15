@@ -19,6 +19,7 @@ import { ExecutorRuntimeGuard } from '../lib/executor-runtime-guard.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { saveTaskAtomic, readTaskFile } from '../lib/store.mjs';
 import { detectThinkingDeadLoop } from '../lib/adapters.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 function tmpDir(prefix) {
   return mkdtempSync(join(tmpdir(), prefix));

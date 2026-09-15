@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { executeTask } from '../orchestrator.mjs';
 import { ensureGitRepo, commitWorktree } from '../lib/worktree.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 const tempDirs = [];
 function makeTempDir(prefix = 'af-orch-wt-') {

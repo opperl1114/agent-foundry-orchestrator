@@ -17,6 +17,7 @@ import { loadExecutorStatus } from '../lib/executor-status.mjs';
 import { validateReviewBinding, bindReviewResult } from '../lib/reviews.mjs';
 import { executeTask } from '../orchestrator.mjs';
 import { saveTaskAtomic, readTaskFile } from '../lib/store.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 const ORCH_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const taskFile = (id) => join(ORCH_ROOT, 'tasks', `${id}.json`);

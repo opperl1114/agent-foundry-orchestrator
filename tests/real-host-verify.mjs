@@ -10,6 +10,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX_SH = join(ROOT, 'fixtures', 'make-fixture.sh');

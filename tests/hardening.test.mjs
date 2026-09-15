@@ -9,6 +9,7 @@ import { after } from 'node:test';
 import { executeTask } from '../orchestrator.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
 import { normalizeAcceptanceCmd } from '../lib/acceptance.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 // real workspace dir: acceptance runs with cwd pinned here
 const WORK = mkdtempSync(join(tmpdir(), 'af-11-work-'));

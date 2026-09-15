@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { executeTask, resumeGovernance } from '../orchestrator.mjs';
 import { GovernanceBridge, classifyPublishVerdict } from '../lib/governance.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
+import './helpers/acceptance-allowlist.mjs';
 
 const WORK = mkdtempSync(join(tmpdir(), 'af-p2-work-'));
 after(() => { rmSync(WORK, { recursive: true, force: true }); });

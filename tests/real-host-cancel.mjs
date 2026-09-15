@@ -9,6 +9,7 @@ import { execSync, spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import './helpers/acceptance-allowlist.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TASKS_DIR = join(ROOT, 'tasks');

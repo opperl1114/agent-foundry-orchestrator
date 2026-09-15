@@ -22,6 +22,7 @@ import {
   loadCapabilityMap,
   DEFAULT_PRIORITY_ORDER,
 } from '../lib/executor-router.mjs';
+import './helpers/acceptance-allowlist.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { classifyExecutionError } from '../lib/executor-error-classifier.mjs';
 import { ExecutorRuntimeGuard } from '../lib/executor-runtime-guard.mjs';

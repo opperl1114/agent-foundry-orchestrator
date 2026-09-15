@@ -26,7 +26,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { selectExecutor, ADAPTERS } from './lib/adapters.mjs';
 import { classifyExecutionError } from './lib/executor-error-classifier.mjs';
 import { saveTaskAtomic, readTaskFile, taskFileExists } from './lib/store.mjs';
-import { runAcceptance, normalizeAcceptanceCmd } from './lib/acceptance.mjs';
+import { runAcceptance, normalizeAcceptanceCmd, acceptanceBinding } from './lib/acceptance.mjs';
 import { GovernanceBridge, classifyPublishVerdict } from './lib/governance.mjs';
 import { bindReviewResult, latestAuthorRun } from './lib/reviews.mjs';
 import { readLock, isLockStale } from './lib/tasklock.mjs';
@@ -1161,6 +1161,9 @@ function loadTaskFile(path) {
   if (task.task_mode === 'governed_write' && !task.candidate?.target) {
     throw new Error('governed_write tasks must define candidate.target');
   }
+  // Bind the acceptance trust anchor to the validated definition, so a later
+  // edit of tasks/<id>.json is detected before the command is executed.
+  task.acceptance_binding = acceptanceBinding(task);
   saveTask(task);
   return task;
 }
