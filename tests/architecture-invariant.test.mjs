@@ -103,16 +103,29 @@ test('INV-3: Governance Bypass Forbidden: local forgery is rejected fail-closed'
     'Must fail closed when vaultRoot is missing'
   );
 
-  // 2. Verify classifyPublishVerdict strictly evaluates policy and outcome
+  // 2. Verify classifyPublishVerdict evaluates the OUTCOME, never the policy class
   const humanVerdict = classifyPublishVerdict({ policy_decision: 'human_required', published: false });
   assert.strictEqual(humanVerdict, 'human_required', 'Must remain human_required without approval');
 
   const denyVerdict = classifyPublishVerdict({ policy_decision: 'deny' });
   assert.strictEqual(denyVerdict, 'deny', 'Deny verdict must fail closed');
 
-  // Agent trying to claim published: false with policy_decision: 'auto_publish'
-  const autoVerdict = classifyPublishVerdict({ policy_decision: 'auto_publish' });
-  assert.strictEqual(autoVerdict, 'published', 'Auto publish produces published verdict');
+  // A forged or absent publish outcome must never be read as a publish. The
+  // policy class "auto_publish" states which strategy applies, not that
+  // anything was actually published.
+  assert.notStrictEqual(
+    classifyPublishVerdict({ policy_decision: 'auto_publish', published: false }),
+    'published',
+    'auto_publish is a strategy class, not a publish outcome'
+  );
+  assert.strictEqual(classifyPublishVerdict({ policy_decision: 'auto_publish' }), 'unknown');
+  assert.strictEqual(classifyPublishVerdict({ policy_decision: 'auto_allow' }), 'unknown');
+  assert.strictEqual(classifyPublishVerdict({}), 'unknown');
+  assert.strictEqual(classifyPublishVerdict(null), 'unknown');
+
+  // Only the vault-confirmed outcome counts as published.
+  assert.strictEqual(classifyPublishVerdict({ published: true }), 'published');
+  assert.strictEqual(classifyPublishVerdict({ published_path: 'agent-foundry-vault/page.md' }), 'published');
 });
 
 // ----------------------------------------------------------------------------

@@ -495,7 +495,12 @@ async function runGovernance(task, adapters, bridge) {
   return classifyPublishVerdict(pub.verdict);
 }
 
-async function completePublish(task) {
+async function completePublish(task, decision) {
+  // A policy class is not a publish outcome: only a vault-confirmed published
+  // verdict may complete a governed task.
+  if (decision !== 'published') {
+    throw new Error(`completePublish requires a published verdict, got ${decision}`);
+  }
   task.state = 'PUBLISHING';
   saveTask(task);
   task.governance = task.governance ?? { governance_source: 'vault-mcp' };
@@ -541,14 +546,14 @@ export async function resumeGovernance(taskId, { adapters = ADAPTERS, bridgeOver
     // Idempotent settle: a previous resume may have already obtained a
     // published verdict - confirm it against the vault before completing.
     const settled = await settleIfPublished(task, bridge);
-    if (settled === 'published') return await completePublish(task);
+    if (settled === 'published') return await completePublish(task, 'published');
     const decision = await runGovernancePublishOnly(task, bridge);
     if (decision === 'human_required') {
       task.state = 'WAITING_HUMAN'; // gate still open; keep waiting
       saveTask(task);
       return task;
     }
-    if (decision === 'published') return await completePublish(task);
+    if (decision === 'published') return await completePublish(task, decision);
     task.state = 'FAILED';
     task.failure_reason = 'GOVERNANCE_DENIED';
     saveTask(task);
@@ -933,7 +938,7 @@ async function runLoopFromReview(task, revision, adapters, { governanceBridge = 
           } finally {
             bridge.stop?.();
           }
-          if (decision === 'published' || decision === 'auto_publish') return await completePublish(task);
+          if (decision === 'published') return await completePublish(task, decision);
           if (decision === 'human_required') {
             task.state = 'WAITING_HUMAN';
             saveTask(task);
@@ -1022,9 +1027,9 @@ export async function continueTask(taskId, adapters = ADAPTERS, { governanceBrid
     const bridge = makeBridge(task, governanceBridge);
     try {
       const settled = await settleIfPublished(task, bridge); // vault truth first
-      if (settled === 'published') return await completePublish(task);
+      if (settled === 'published') return await completePublish(task, 'published');
       const decision = await runGovernancePublishOnly(task, bridge);
-      if (decision === 'published' || decision === 'auto_publish') return await completePublish(task);
+      if (decision === 'published') return await completePublish(task, decision);
       if (decision === 'human_required') { task.state = 'WAITING_HUMAN'; saveTask(task); return task; }
       task.state = 'FAILED';
       task.failure_reason = decision === 'deny' ? 'GOVERNANCE_DENIED' : `GOVERNANCE_UNKNOWN_${String(decision).toUpperCase()}`;
@@ -1041,7 +1046,7 @@ export async function continueTask(taskId, adapters = ADAPTERS, { governanceBrid
     const bridge = makeBridge(task, governanceBridge);
     try {
       const decision = await runGovernance(task, adapters, bridge);
-      if (decision === 'published' || decision === 'auto_publish') return await completePublish(task);
+      if (decision === 'published') return await completePublish(task, decision);
       if (decision === 'human_required') { task.state = 'WAITING_HUMAN'; saveTask(task); return task; }
       task.state = 'FAILED';
       task.failure_reason = decision === 'deny' ? 'GOVERNANCE_DENIED' : `GOVERNANCE_UNKNOWN_${String(decision).toUpperCase()}`;

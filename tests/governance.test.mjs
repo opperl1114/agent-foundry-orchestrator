@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { executeTask, resumeGovernance } from '../orchestrator.mjs';
+import { GovernanceBridge, classifyPublishVerdict } from '../lib/governance.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
 
 const WORK = mkdtempSync(join(tmpdir(), 'af-p2-work-'));
@@ -152,6 +153,43 @@ test('TEST E-gov: deny -> FAILED GOVERNANCE_DENIED, no retry/downgrade', async (
   assert.strictEqual(done.state, 'FAILED');
   assert.strictEqual(done.failure_reason, 'GOVERNANCE_DENIED');
   assert.strictEqual(bridge.calls.filter((c) => c.kind === 'publish_candidate').length, 1, 'deny must not be retried');
+});
+
+test('TEST C3-gov: 只有 published 结果才算发布，策略类别 auto_publish 不算', async () => {
+  const author = makeFake('antigravity', [{ sessionRef: 'S1', text: 'content' }]);
+  const reviewer = makeFake('claude', [
+    { sessionRef: 'R1', review: PASS },
+    { sessionRef: 'R2', text: JSON.stringify({ agent_instance_id: 'REV-1', review_decision: 'approve', reasons: 'ok' }) },
+  ]);
+  // A strategy class with no publish outcome: the vault published nothing.
+  const bridge = makeFakeBridge([{ policy_decision: 'auto_publish', published: false }]);
+  const done = await executeTask(governedTask(), { antigravity: author, claude: reviewer, codex: makeFake('codex', []) }, { governanceBridge: bridge });
+
+  assert.notStrictEqual(done.state, 'COMPLETED', 'a policy class is not a publish outcome');
+  assert.strictEqual(done.state, 'FAILED');
+  assert.notStrictEqual(done.governance.publish_status, 'published');
+  assert.strictEqual(done.governance.published_flag, false);
+});
+
+test('TEST C3-parse: 非 JSON 文本（如 "not published"）不得被判为已发布', async () => {
+  // vault-mcp answered prose instead of JSON: the fallback parser must never
+  // turn "not published" into a publish.
+  const bridge = new GovernanceBridge({ task_id: 'TASK-C3-PARSE', vaultRoot: '/tmp/c3-parse-vault' });
+  bridge.ensureRegistered = async () => 'INST-C3';
+  bridge.client = {
+    call: async () => ({ raw: 'REVIEW_STALE: candidate content changed - not published', json: null }),
+  };
+
+  const stale = await bridge.publish('CAND-C3');
+  assert.notStrictEqual(classifyPublishVerdict(stale.verdict), 'published');
+  assert.strictEqual(classifyPublishVerdict(stale.verdict), 'unknown');
+
+  // The structured outcome is still authoritative.
+  bridge.client = {
+    call: async () => ({ raw: '{"published":true,"published_path":"vault/x.md"}', json: { published: true, published_path: 'vault/x.md' } }),
+  };
+  const ok = await bridge.publish('CAND-C3');
+  assert.strictEqual(classifyPublishVerdict(ok.verdict), 'published');
 });
 
 test('TEST F-gov: forged local human_gate_status=approved is ignored on resume', async () => {
