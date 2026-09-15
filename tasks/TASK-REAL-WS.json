@@ -1,0 +1,124 @@
+{
+  "state": "COMPLETED",
+  "state_version": 3,
+  "runs": [
+    {
+      "executor_run_id": "RUN-50b7e129",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "cfd34784-e7cd-485f-84f8-731dfc31f838",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:01:39.469Z",
+      "finished_at": "2026-09-06T03:03:04.971Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-1a3f726c",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "5d0a88db-40c1-4387-b0e3-760a02498626",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:03:04.975Z",
+      "finished_at": "2026-09-06T03:03:37.939Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "task_id": "TASK-REAL-WS",
+  "goal": "Fix the bug in calc.js: add(a, b) must return a + b instead of a - b. Keep the change minimal.",
+  "acceptance": "node --test calc.test.js passes all tests.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "--test",
+      "calc.test.js"
+    ]
+  },
+  "red_lines": [
+    "Only modify files inside the fixture directory"
+  ],
+  "review_rules": [
+    "calc.js: add(a,b) returns a + b (cite file:line)",
+    "calc.test.js unchanged and still asserts the two cases"
+  ],
+  "fixture_dir": "/tmp/af-r2-ws",
+  "requires_mcp": false,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "max_revisions": 3,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "updated_at": "2026-09-06T03:03:38.013Z",
+  "last_author_content": "The fix is in place. Here's a summary of what changed.\n\n## Summary\n\n**Changed:** `/tmp/af-r2-ws/calc.js:3`\n\n```js\n// before\nreturn a - b; // BUG: intentionally wrong\n// after\nreturn a + b;\n```\n\n**Scope:** Only `calc.js` was modified (the fixture directory). The change is a single line — minimal as required.\n\n**Acceptance check:**\n- `add(1, 2)` now returns `1 + 2 = 3` ✓ (matches `calc.test.js:5`)\n- `add(0, 0)` now returns `0 + 0 = 0` ✓ (matches `calc.test.js:6`)\n\n**Caveat:** I could not execute `node --test calc.test.js` to produce automated evidence — the environment's permission gate denied every `node`/`git` invocation (auto-denied approval, non-interactive). The fix is verified by reading the final file state and checking it against both test assertions; the automated run is pending permission.",
+  "author_session_ref": "cfd34784-e7cd-485f-84f8-731dfc31f838",
+  "author_session_executor_type": "claude",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "The fix is minimal and correct. calc.js:3 now returns `a + b` instead of `a - b`, and git diff confirms only calc.js was modified — calc.test.js is unchanged and still asserts add(1,2)===3 and add(0,0)===0 (calc.test.js:5-6). Statically, both assertions hold under the new implementation (1+2=3, 0+0=0). I attempted to run `node --test calc.test.js` but execution required permission approval and could not be completed, so the acceptance check is verified by static inspection rather than an actual test run.",
+    "issues": [
+      "Could not execute the acceptance command (`node --test calc.test.js`) — Bash required approval and the run did not complete; verification is static, not a live run."
+    ],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:3 — `return a + b;` (fixed from `return a - b;`)",
+      "calc.js:2 — `export function add(a, b)` signature unchanged",
+      "calc.test.js:5 — `assert.strictEqual(add(1, 2), 3)` still asserted",
+      "calc.test.js:6 — `assert.strictEqual(add(0, 0), 0)` still asserted",
+      "git diff: only calc.js modified (`-  return a - b; // BUG: intentionally wrong` / `+  return a + b;`); calc.test.js unchanged",
+      "node --test calc.test.js — blocked pending approval, not executed"
+    ],
+    "task_id": "TASK-REAL-WS",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-50b7e129",
+    "reviewer_echo": {
+      "task_id": "TASK-REAL-WS",
+      "revision": 1
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "--test",
+        "calc.test.js"
+      ],
+      "cwd": "/tmp/af-r2-ws",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 74,
+      "started_at": "2026-09-06T03:03:37.939Z",
+      "stdout_summary": "✔ add(1,2) === 3 (0.584104ms)\n✔ add(0,0) === 0 (0.113898ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 44.549495\n",
+      "stderr_summary": "",
+      "failure_reason": null
+    }
+  ],
+  "completed_at": "2026-09-06T03:03:38.013Z",
+  "final_review": {
+    "decision": "PASS",
+    "summary": "The fix is minimal and correct. calc.js:3 now returns `a + b` instead of `a - b`, and git diff confirms only calc.js was modified — calc.test.js is unchanged and still asserts add(1,2)===3 and add(0,0)===0 (calc.test.js:5-6). Statically, both assertions hold under the new implementation (1+2=3, 0+0=0). I attempted to run `node --test calc.test.js` but execution required permission approval and could not be completed, so the acceptance check is verified by static inspection rather than an actual test run.",
+    "issues": [
+      "Could not execute the acceptance command (`node --test calc.test.js`) — Bash required approval and the run did not complete; verification is static, not a live run."
+    ],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:3 — `return a + b;` (fixed from `return a - b;`)",
+      "calc.js:2 — `export function add(a, b)` signature unchanged",
+      "calc.test.js:5 — `assert.strictEqual(add(1, 2), 3)` still asserted",
+      "calc.test.js:6 — `assert.strictEqual(add(0, 0), 0)` still asserted",
+      "git diff: only calc.js modified (`-  return a - b; // BUG: intentionally wrong` / `+  return a + b;`); calc.test.js unchanged",
+      "node --test calc.test.js — blocked pending approval, not executed"
+    ],
+    "task_id": "TASK-REAL-WS",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-50b7e129",
+    "reviewer_echo": {
+      "task_id": "TASK-REAL-WS",
+      "revision": 1
+    }
+  }
+}

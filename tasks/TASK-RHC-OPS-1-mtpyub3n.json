@@ -1,0 +1,24 @@
+{
+  "task_id": "TASK-RHC-OPS-1-mtpyub3n",
+  "goal": "RHC-OPS-1 real failure circuit open test",
+  "acceptance": "test acceptance",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "fixture_dir": "/tmp",
+  "author_executor": "antigravity",
+  "reviewer_executor": "claude",
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "max_revisions": 2,
+  "red_lines": [],
+  "review_rules": [],
+  "state": "FAILED",
+  "runs": [],
+  "failure_reason": "EXECUTOR_UNAVAILABLE: antigravity availability=UNAVAILABLE (ACCOUNT_DISABLED_403); scheduler must not attempt to start it",
+  "retryable": false
+}

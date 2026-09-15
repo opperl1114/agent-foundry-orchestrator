@@ -1,0 +1,137 @@
+{
+  "task_id": "TASK-RCC-RACE1-mtpo303y",
+  "task_mode": "workspace",
+  "goal": "Fix the bug in calc.js: add(a, b) must return a + b instead of a - b. Keep the change minimal.",
+  "acceptance": "node --test calc.test.js passes all tests.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "--test",
+      "calc.test.js"
+    ]
+  },
+  "allow_legacy_shell_acceptance": false,
+  "candidate": null,
+  "governance_env": null,
+  "red_lines": [
+    "Only modify files inside the fixture directory"
+  ],
+  "review_rules": [
+    "calc.js: add(a,b) returns a + b (cite file:line)",
+    "calc.test.js unchanged"
+  ],
+  "fixture_dir": "/tmp/af-rc1-b",
+  "requires_mcp": false,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "max_revisions": 3,
+  "state": "COMPLETED",
+  "state_version": 4,
+  "created_at": "2026-09-06T10:26:43.317Z",
+  "updated_at": "2026-09-06T10:31:14.440Z",
+  "runs": [
+    {
+      "executor_run_id": "RUN-7fbdfaa5",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "fb12250a-3377-4a00-b6b9-eb20bfdfb53f",
+      "exit_code": 0,
+      "started_at": "2026-09-06T10:26:43.327Z",
+      "finished_at": "2026-09-06T10:29:55.940Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-77cb7389",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "d45d07fe-9f44-4406-9d4e-af7f1698e95d",
+      "exit_code": 0,
+      "started_at": "2026-09-06T10:29:55.945Z",
+      "finished_at": "2026-09-06T10:30:30.024Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-4b887e60",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "d67ae409-bb0d-4c94-af16-a524544b9ed6",
+      "exit_code": 0,
+      "started_at": "2026-09-06T10:30:30.024Z",
+      "finished_at": "2026-09-06T10:31:14.366Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "next_run_id": "RUN-77cb7389",
+  "last_author_content": "The environment's permission gate blocks running node scripts (tests, eval, npm) — only read-only commands are allowed here, so I could not execute the test suite directly. The fix is complete and verified by inspection.\n\n## Summary\n\n**Changed:** `/tmp/af-rc1-b/calc.js` — the bug was a single line: `add(a, b)` returned `a - b`. Changed it to `return a + b;` (removed the `// BUG` comment).\n\n**Minimality:** One-line change in the fixture dir only; `calc.test.js` and everything else untouched (confirmed via `git diff`).\n\n**Verification:**\n- Automated: `node --test calc.test.js` **could not be executed** — this environment's permission gate requires interactive approval for node/npm execution, which isn't available in this headless task. Marked as unverified by automated run.\n- By inspection: `add(1,2)` → `1+2=3` matches `add(1,2) === 3`; `add(0,0)` → `0+0=0` matches `add(0,0) === 0`. Both `node:test` assertions use `assert.strictEqual` on numbers, so they should pass.",
+  "author_session_ref": "fb12250a-3377-4a00-b6b9-eb20bfdfb53f",
+  "author_session_executor_type": "claude",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "The fix correctly changes calc.js so add(a, b) returns a + b instead of a - b. calc.js:3 now reads `return a + b;`, and git diff confirms the only change is the single-line replacement of `return a - b; // BUG: intentionally wrong` with `return a + b;`. calc.test.js is byte-for-byte unchanged: it does not appear in `git diff HEAD` and git status lists only calc.js as modified. The change is minimal, matching the original goal exactly. I attempted to run `node --test calc.test.js` to confirm the acceptance criterion, but execution was blocked by a permission prompt I could not approve; however, the assertions in the unchanged test file (add(1,2)===3, add(0,0)===0) are trivially satisfied by the new implementation, so the acceptance outcome is deterministic and consistent with the code evidence.",
+    "issues": [
+      "Automated test execution could not be run in this environment due to a permission gate; verification is by code inspection of the diff and test file rather than a live `node --test` run."
+    ],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:3: `return a + b;`",
+      "git diff HEAD -- calc.js calc.test.js: only `-  return a - b; // BUG: intentionally wrong` -> `+  return a + b;` in calc.js; calc.test.js absent from diff (unchanged)",
+      "git status: `modified:   calc.js` only; calc.test.js unmodified"
+    ],
+    "task_id": "TASK-RCC-RACE1-mtpo303y",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-7fbdfaa5",
+    "reviewer_echo": {
+      "task_id": "TASK-RCC-RACE1-mtpo303y",
+      "revision": 1
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "--test",
+        "calc.test.js"
+      ],
+      "cwd": "/tmp/af-rc1-b",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 74,
+      "started_at": "2026-09-06T10:31:14.366Z",
+      "stdout_summary": "✔ add(1,2) === 3 (0.638183ms)\n✔ add(0,0) === 0 (0.110129ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 44.657744\n",
+      "stderr_summary": "",
+      "failure_reason": null,
+      "revision": 1
+    }
+  ],
+  "completed_at": "2026-09-06T10:31:14.440Z",
+  "final_review": {
+    "decision": "PASS",
+    "summary": "The fix correctly changes calc.js so add(a, b) returns a + b instead of a - b. calc.js:3 now reads `return a + b;`, and git diff confirms the only change is the single-line replacement of `return a - b; // BUG: intentionally wrong` with `return a + b;`. calc.test.js is byte-for-byte unchanged: it does not appear in `git diff HEAD` and git status lists only calc.js as modified. The change is minimal, matching the original goal exactly. I attempted to run `node --test calc.test.js` to confirm the acceptance criterion, but execution was blocked by a permission prompt I could not approve; however, the assertions in the unchanged test file (add(1,2)===3, add(0,0)===0) are trivially satisfied by the new implementation, so the acceptance outcome is deterministic and consistent with the code evidence.",
+    "issues": [
+      "Automated test execution could not be run in this environment due to a permission gate; verification is by code inspection of the diff and test file rather than a live `node --test` run."
+    ],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:3: `return a + b;`",
+      "git diff HEAD -- calc.js calc.test.js: only `-  return a - b; // BUG: intentionally wrong` -> `+  return a + b;` in calc.js; calc.test.js absent from diff (unchanged)",
+      "git status: `modified:   calc.js` only; calc.test.js unmodified"
+    ],
+    "task_id": "TASK-RCC-RACE1-mtpo303y",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-7fbdfaa5",
+    "reviewer_echo": {
+      "task_id": "TASK-RCC-RACE1-mtpo303y",
+      "revision": 1
+    }
+  }
+}

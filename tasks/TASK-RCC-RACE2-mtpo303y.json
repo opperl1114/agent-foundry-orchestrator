@@ -1,0 +1,53 @@
+{
+  "task_id": "TASK-RCC-RACE2-mtpo303y",
+  "task_mode": "workspace",
+  "goal": "Fix the bug in calc.js: add(a, b) must return a + b instead of a - b. Keep the change minimal. Work step by step: (1) run `node --test calc.test.js` and observe the failure, (2) edit calc.js so add() returns a + b, (3) run `node --test calc.test.js` again to confirm both tests pass. Do not skip the test runs.",
+  "acceptance": "node --test calc.test.js passes all tests.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "--test",
+      "calc.test.js"
+    ]
+  },
+  "allow_legacy_shell_acceptance": false,
+  "candidate": null,
+  "governance_env": null,
+  "red_lines": [
+    "Only modify files inside the fixture directory",
+    "Do not delete or weaken the existing tests"
+  ],
+  "review_rules": [
+    "calc.js: add(a,b) returns a + b (cite file:line)",
+    "calc.test.js unchanged"
+  ],
+  "fixture_dir": "/tmp/af-rc1-a",
+  "requires_mcp": false,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "max_revisions": 2,
+  "state": "CANCELLED",
+  "state_version": 3,
+  "created_at": "2026-09-06T10:31:15.463Z",
+  "updated_at": "2026-09-06T10:31:19.561Z",
+  "runs": [
+    {
+      "executor_run_id": "RUN-e8cdfc9a",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "cancelled",
+      "session_ref": null,
+      "exit_code": 143,
+      "started_at": "2026-09-06T10:31:15.471Z",
+      "finished_at": "2026-09-06T10:31:19.561Z",
+      "error": "run cancelled by operator"
+    }
+  ],
+  "revisions_used": 1,
+  "next_run_id": "RUN-e8cdfc9a",
+  "cancelled_at": "2026-09-06T10:31:19.561Z",
+  "cancel_reason": "cancelled while executor run was active"
+}

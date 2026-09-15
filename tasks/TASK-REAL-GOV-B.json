@@ -1,0 +1,229 @@
+{
+  "state": "WAITING_HUMAN",
+  "state_version": 17,
+  "runs": [
+    {
+      "executor_run_id": "RUN-9571e69b",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "3cef6e87-7e63-4619-b1fe-19b23e34cd34",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:12:11.194Z",
+      "finished_at": "2026-09-06T03:13:03.547Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-10255d34",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "64de51ac-ec78-47d7-84c2-521dfdd22a2c",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:13:03.551Z",
+      "finished_at": "2026-09-06T03:13:30.024Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-41aced6a",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "fix",
+      "status": "completed",
+      "session_ref": "3cef6e87-7e63-4619-b1fe-19b23e34cd34",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:13:30.033Z",
+      "finished_at": "2026-09-06T03:13:43.352Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-0274daba",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "c535fa78-c76a-490d-9337-7d839e2e019c",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:13:43.357Z",
+      "finished_at": "2026-09-06T03:14:01.913Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-73908c27",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "formal_review",
+      "status": "completed",
+      "session_ref": "fc4851ae-516d-4e02-a0a5-3e1dde798bf1",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:14:01.989Z",
+      "finished_at": "2026-09-06T03:15:05.569Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-c4f38cdd",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "ee1bb811-fa0e-47a3-a7ab-cbd362279cd2",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:16:07.434Z",
+      "finished_at": "2026-09-06T03:17:05.994Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-52613fa3",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "9ec9922c-5370-4f32-a259-46afcc5666e9",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:17:05.999Z",
+      "finished_at": "2026-09-06T03:17:24.448Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-bd514afe",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "formal_review",
+      "status": "completed",
+      "session_ref": "2cac2b24-158e-4057-b80b-b40b155167ff",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:17:24.531Z",
+      "finished_at": "2026-09-06T03:18:38.013Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 2,
+  "task_id": "TASK-REAL-GOV-B",
+  "task_mode": "governed_write",
+  "goal": "Write the documentation page 'About the 99-af-e2e fixture area (B)' for this fixture vault. First line must be: '> Agent Foundry Orchestrator E2E tooling - fixture area documentation.' Content must state accurately: 99-af-e2e/ holds throwaway artifacts of governed-write E2E probes; targets under it are unmatched by L2 path rules so policy classifies them L3-governed and requires a real Human Gate; cleanup is a full fixture reset via fixtures/make-governed-fixture.sh. Only reference this target path (99-af-e2e/af-r3-gate-probe-b.md).",
+  "acceptance": "Author produces the page content; QA review passes; policy decides.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "red_lines": [
+    "Only fixture content"
+  ],
+  "review_rules": [
+    "The page's first line is the required tooling marker",
+    "The page accurately describes the area purpose, L3/human-gate consequence, and cleanup",
+    "PASS if both hold - real tool documentation sourced from the task definition"
+  ],
+  "fixture_dir": "/tmp/af-gov-vault",
+  "requires_mcp": true,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "max_revisions": 2,
+  "candidate": {
+    "title": "About the 99-af-e2e fixture area (B)",
+    "target": "99-af-e2e/af-r3-gate-probe-b.md",
+    "knowledge_class": "procedural",
+    "sources": [
+      "agent-foundry-orchestrator/fixtures/make-governed-fixture.sh",
+      "agent-foundry-orchestrator/tasks/task-real-gov-b.json"
+    ],
+    "publish_tags": [
+      "tooling",
+      "agent-harness"
+    ],
+    "publish_summary": "About the 99-af-e2e fixture area (B) (R3 real-host correlation probe)",
+    "rationale": "PHASE 3 R3 real-host governed correlation probe"
+  },
+  "governance_env": {
+    "server_path": "/mnt/c/Users/relaret/vault-mcp/server.mjs",
+    "vault_root": "/tmp/af-gov-vault",
+    "state_db": "/tmp/af-gov-vault/state.db",
+    "reviewer_mcp_config": "/mnt/c/Users/relaret/agent-foundry-orchestrator/fixtures/fixture-vault-mcp.json",
+    "reviewer_allowed_tools": "mcp__agent-foundry-vault-fixture__agent_register,mcp__agent-foundry-vault-fixture__review_candidate",
+    "reviewer_server_name": "agent-foundry-vault-fixture"
+  },
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "updated_at": "2026-09-06T03:18:38.026Z",
+  "last_author_content": "All facts verified against the live fixture vault:\n- `99-af-e2e/` matches no rule in `harness/policy.mjs` `CLASS_RULES`, so `classifyTarget` returns `unmatched-path→L3` and `evaluateWritePolicy` returns `human_required` — a real Human Gate, no lowering possible.\n- Vault `AGENTS.md` confirms L3 is always human-approved and effective class is never self-declared.\n- Cleanup path (`fixtures/make-governed-fixture.sh`) is the fixture script referenced by the task; it lives with the orchestrator, not inside the fixture vault itself.\n\nI made no file changes — the authoring deliverable is the page below, which the orchestrator will submit as the candidate.\n\n<hr>\n\nShort summary of my work: I read the fixture vault's `SCHEMA.md`, `AGENTS.md`, and `harness/policy.mjs` to confirm the exact L2/L3 path classification and Human Gate semantics, then drafted the page stating only the four required facts. No files were created or modified.\n\n<PAGE>\n> Agent Foundry Orchestrator E2E tooling - fixture area documentation.\n\n`99-af-e2e/` is the fixture area for governed-write E2E probes. It holds throwaway artifacts produced by the Agent Foundry Orchestrator's end-to-end tests of the governed write pipeline; nothing here is long-lived knowledge.\n\nTargets under `99-af-e2e/` are not matched by any L2-knowledge path rule in the write policy. Unmatched paths are classified L3-governed (the conservative default, preserving default-deny behavior), and the policy evaluator returns `human_required`. Publishing a page here therefore always requires a real Human Gate: the effective write class cannot be lowered by an executor, and there is no auto-publish path.\n\nThis page is one such probe target: `99-af-e2e/af-r3-gate-probe-b.md`.\n\nCleanup is a full fixture reset. Individual probe files are not edited or deleted in place; the entire fixture area is regenerated by running `fixtures/make-governed-fixture.sh`.\n</PAGE>",
+  "author_session_ref": "ee1bb811-fa0e-47a3-a7ab-cbd362279cd2",
+  "author_session_executor_type": "claude",
+  "submission_path": "/tmp/af-gov-vault/orchestrator-submission.md",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "The submission fully satisfies every REVIEW_SCOPE_RULES item. Line 1 is exactly the required tooling marker: '> Agent Foundry Orchestrator E2E tooling - fixture area documentation.' The body accurately states the area purpose (throwaway artifacts of governed-write E2E probes under 99-af-e2e/), the L3/human-gate consequence (targets unmatched by L2 path rules are classified L3-governed, the policy evaluator returns human_required, and a real Human Gate is always required with no auto-publish path and no executor-lowering of the write class), and the cleanup method (full fixture reset via fixtures/make-governed-fixture.sh, not in-place file edits). It references only the permitted target path 99-af-e2e/af-r3-gate-probe-b.md and no other paths. Content is faithful to the task definition and reads as genuine tool documentation. No issues found.",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "orchestrator-submission.md:1 — exact required first-line marker",
+      "orchestrator-submission.md:3 — area purpose: throwaway governed-write E2E probe artifacts",
+      "orchestrator-submission.md:5 — unmatched L2 path rules -> L3-governed -> human_required, real Human Gate, no auto-publish",
+      "orchestrator-submission.md:7 — only referenced target path 99-af-e2e/af-r3-gate-probe-b.md",
+      "orchestrator-submission.md:9 — cleanup = full fixture reset via fixtures/make-governed-fixture.sh"
+    ],
+    "task_id": "TASK-REAL-GOV-B",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-c4f38cdd",
+    "reviewer_echo": {
+      "task_id": "TASK-REAL-GOV-B",
+      "revision": 1
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(0)"
+      ],
+      "cwd": "/tmp/af-gov-vault",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 18,
+      "started_at": "2026-09-06T03:14:01.913Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": null
+    },
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(0)"
+      ],
+      "cwd": "/tmp/af-gov-vault",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 21,
+      "started_at": "2026-09-06T03:17:24.448Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": null
+    }
+  ],
+  "governance": {
+    "governance_source": "vault-mcp",
+    "candidate_id": "cand-20260906T031724-217216",
+    "agent_instance_ids": {
+      "bridge_requested": "af-bridge.task-real-gov-b.f83b3c5f",
+      "bridge": "af-bridge.task-real-gov-b.f83b3c5f",
+      "reviewer": "claude-gov-b-reviewer"
+    },
+    "candidate_raw": "{\n  \"candidate_id\": \"cand-20260906T031724-217216\",\n  \"created\": \"10-收件箱/写回候选/2026-09-06-About the 99-af-e2e fixture area (B).md\",\n  \"mode\": \"governed\",\n  \"author_agent_instance_id\": \"af-bridge.task-real-gov-b.f83b3c5f\",\n  \"briefing\": \"publish_summary=About the 99-af-e2e fixture area (B) (R3 real-host correlation probe)；publish_tags=tooling,agent-harness\"\n}",
+    "formal_review": {
+      "reviewer_instance_id": "claude-gov-b-reviewer",
+      "review_decision": "approve",
+      "reasons": "Independent review of cand-20260906T031724-217216: content is coherent and appropriately scoped to the 99-af-e2e fixture/probe area; the four stated facts are internally consistent and match governance semantics (unmatched path → conservative L3 default → human_required, no auto-publish, no executor-driven lowering of effective write class). Page correctly frames artifacts as throwaway E2E probe output, not long-lived knowledge, and states the full-reset cleanup model. No credentials, secrets, or fabricated claims. Limitation: fixture-server read tools (read_governance/vault_read/policy.mjs) were permission-denied, so the exact CLASS_RULES match could not be re-verified; the L3/human_required claim is plausible and consistent with documented default-deny behavior. Approval applies to the <PAGE> deliverable; the prefixed authoring summary should be excluded from the published page body."
+    },
+    "policy_decision": "human_required",
+    "published_flag": false,
+    "published_path": null,
+    "policy_evidence": "{\n  \"outcome\": \"human_required\",\n  \"policy_decision\": \"human_required\",\n  \"published\": false,\n  \"candidate_id\": \"cand-20260906T031724-217216\",\n  \"effective_write_class\": \"L3-governed\",\n  \"requested_write_class\": \"L2-knowledge\",\n  \"human_gate\": \"HUMAN_APPROVAL_REQUIRED\",\n  \"gate\": \"HUMAN_APPROVAL_REQUIRED\",\n  \"reason_code\": \"HUMAN_APPROVAL_REQUIRED\",\n  \"reasons\": [\n    \"write-class-override: requested=L2-knowledge effective=L3-governed（自报等级不被信任，一律以判定为准）\",\n    \"classify[99-af-e2e/af-r3-gate-probe-b.md]: unmatched-path→L3（默认最保守，维持 default-deny 行为）\",\n    \"HUMAN_APPROVAL_REQUIRED：缺少有效 local-human-cli approval\"\n  ],\n  \"review\": {\n    \"decision\": \"approve\",\n    \"reviewer\": \"claude-gov-b-reviewer\"\n  },\n  \"human_approval\": null\n}"
+  }
+}

@@ -1,0 +1,60 @@
+#!/bin/bash
+# cline-af - Cline CLI adapter for Agent Foundry Global Governance
+#
+# Single Source of Truth: /mnt/c/Users/relaret/agent-foundry-global/AGENTS.md
+# Load mechanism: native -s / --system flag
+#
+# Responsibilities:
+#   1. verify canonical exists and is readable
+#   2. compute AGENT_FOUNDRY_GOVERNANCE_SHA256 dynamically
+#   3. export adapter metadata env vars
+#   4. inject canonical governance via -s / --system
+#   5. pass through all original args; preserve exit code via exec
+
+set -u
+
+CLINE_BIN="${CLINE_BIN:-/home/relaret/.nvm/versions/node/v24.20.0/bin/cline}"
+GOV_DIR=/mnt/c/Users/relaret/agent-foundry-global
+CANONICAL="$GOV_DIR/AGENTS.md"
+VAULT_ROOT_VALUE=/mnt/c/Users/relaret/agent-foundry-vault
+
+if [ ! -x "$CLINE_BIN" ]; then
+    CLINE_BIN=$(command -v cline 2>/dev/null || true)
+    if [ -z "$CLINE_BIN" ] || [ ! -x "$CLINE_BIN" ]; then
+        echo "cline-af: cline binary not found or not executable: $CLINE_BIN" >&2
+        exit 2
+    fi
+fi
+
+if [ ! -r "$CANONICAL" ]; then
+    echo "cline-af: canonical governance not readable: $CANONICAL" >&2
+    exit 2
+fi
+
+GOV_SHA=$(sha256sum "$CANONICAL" | cut -d' ' -f1)
+if [ -z "$GOV_SHA" ]; then
+    echo "cline-af: failed to compute governance sha256" >&2
+    exit 2
+fi
+
+export AGENT_FOUNDRY_GOVERNANCE_SHA256="$GOV_SHA"
+export AGENT_FOUNDRY_GLOBAL_AGENTS="$CANONICAL"
+export VAULT_ROOT="$VAULT_ROOT_VALUE"
+
+GOV_TEXT="$(cat "$CANONICAL")"
+
+# Parse args to see if -s or --system is already provided
+HAS_SYSTEM=false
+for arg in "$@"; do
+    if [ "$arg" = "-s" ] || [ "$arg" = "--system" ] || [[ "$arg" == --system=* ]]; then
+        HAS_SYSTEM=true
+        break
+    fi
+done
+
+EXTRA_ARGS=()
+if [ "$HAS_SYSTEM" = false ]; then
+    EXTRA_ARGS+=(-s "$GOV_TEXT")
+fi
+
+exec "$CLINE_BIN" "${EXTRA_ARGS[@]}" "$@"

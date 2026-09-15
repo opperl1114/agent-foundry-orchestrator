@@ -1,0 +1,178 @@
+{
+  "state": "WAITING_HUMAN",
+  "state_version": 10,
+  "runs": [
+    {
+      "executor_run_id": "RUN-30498318",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "ea543f44-fc02-4b83-9d68-9029f4503de9",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:05:35.693Z",
+      "finished_at": "2026-09-06T03:06:48.037Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-0870e8d8",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "673762c0-9962-4b26-acec-4810c64f508d",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:06:48.042Z",
+      "finished_at": "2026-09-06T03:07:12.544Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-06cadc41",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "fix",
+      "status": "completed",
+      "session_ref": "ea543f44-fc02-4b83-9d68-9029f4503de9",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:07:12.553Z",
+      "finished_at": "2026-09-06T03:07:25.877Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-8154226f",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "29d544d3-4357-409a-a14b-6370e8751eb1",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:07:25.881Z",
+      "finished_at": "2026-09-06T03:07:44.973Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-b8b86e55",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "formal_review",
+      "status": "completed",
+      "session_ref": "7565f7e6-153f-4fb1-b383-a01b8e322b02",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:07:45.050Z",
+      "finished_at": "2026-09-06T03:08:16.776Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 2,
+  "task_id": "TASK-REAL-L3-mtp8bpmw",
+  "task_mode": "governed_write",
+  "goal": "Write the documentation page 'About the 99-af-e2e fixture area' for this fixture vault. First line must be: '> Agent Foundry Orchestrator E2E tooling - description of the 99-af-e2e fixture area.' Content must state accurately: (1) 99-af-e2e/ holds throwaway artifacts of governed-write E2E probes; (2) targets under it are unmatched by the L2 path rules so policy classifies them L3-governed and requires a real Human Gate; (3) cleanup is a full fixture reset via fixtures/make-governed-fixture.sh. Only reference this target path (99-af-e2e/af-l3-gate-probe.md).",
+  "acceptance": "Author produces the page content; QA review passes; policy decides.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "red_lines": [
+    "Only fixture content"
+  ],
+  "review_rules": [
+    "The page's first line is the required tooling marker",
+    "The page accurately describes the 99-af-e2e area purpose, the L3/human-gate consequence, and the fixture-reset cleanup",
+    "PASS if both hold - this is real tool documentation sourced from the task definition"
+  ],
+  "fixture_dir": "/tmp/af-gov-vault",
+  "requires_mcp": true,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "max_revisions": 2,
+  "candidate": {
+    "title": "About the 99-af-e2e fixture area",
+    "target": "99-af-e2e/af-l3-gate-probe.md",
+    "knowledge_class": "procedural",
+    "sources": [
+      "agent-foundry-orchestrator/fixtures/make-governed-fixture.sh",
+      "agent-foundry-orchestrator/tasks/gov-l3.json"
+    ],
+    "publish_tags": [
+      "tooling",
+      "agent-harness"
+    ],
+    "publish_summary": "Purpose and cleanup of the 99-af-e2e fixture area (R2 real-host probe)",
+    "rationale": "PHASE 3 R2 real-host probe"
+  },
+  "governance_env": {
+    "server_path": "/mnt/c/Users/relaret/vault-mcp/server.mjs",
+    "vault_root": "/tmp/af-gov-vault",
+    "state_db": "/tmp/af-gov-vault/state.db",
+    "reviewer_mcp_config": "/mnt/c/Users/relaret/agent-foundry-orchestrator/fixtures/fixture-vault-mcp.json",
+    "reviewer_allowed_tools": "mcp__agent-foundry-vault-fixture__agent_register,mcp__agent-foundry-vault-fixture__review_candidate",
+    "reviewer_server_name": "agent-foundry-vault-fixture"
+  },
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "updated_at": "2026-09-06T03:08:16.788Z",
+  "last_author_content": "Fixed — re-emitting the page with the required marker as line 1 and no stray fragments.\n\n<PAGE>\n> Agent Foundry Orchestrator E2E tooling - description of the 99-af-e2e fixture area.\n\nThe `99-af-e2e/` area is a throwaway fixture region of this vault: it holds artifacts produced by governed-write E2E probes of the Agent Foundry Orchestrator. Nothing under it is long-lived knowledge; its contents exist only to exercise and observe the write-governance pipeline.\n\nTargets under `99-af-e2e/` are not matched by the L2 path rules. Because an unmatched path falls back to the conservative default, the policy evaluator classifies every target under this area as L3-governed, and a governed write to `99-af-e2e/af-l3-gate-probe.md` (this page) is never auto-published — it requires a real Human Gate before it can be published.\n\nCleanup is not done file-by-file. The fixture area is reset in full by running `fixtures/make-governed-fixture.sh`, which rebuilds the fixture vault from scratch.\n\nThis page is itself one of those probe artifacts: its own publish path exercises the L3 Human Gate route described above.\n</PAGE>",
+  "author_session_ref": "ea543f44-fc02-4b83-9d68-9029f4503de9",
+  "author_session_executor_type": "claude",
+  "submission_path": "/tmp/af-gov-vault/orchestrator-submission.md",
+  "review_revision": 2,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "The submission is accurate, complete, and matches the required tooling marker verbatim. Line 1 is exactly the required first line '> Agent Foundry Orchestrator E2E tooling - description of the 99-af-e2e fixture area.' Line 3 accurately states the 99-af-e2e area purpose as a throwaway fixture region holding artifacts produced by governed-write E2E probes. Line 5 correctly describes the L3 consequence: targets under 99-af-e2e/ are unmatched by the L2 path rules, so policy classifies them L3-governed and never auto-publishes — a real Human Gate is required. Line 7 correctly describes cleanup as a full fixture reset via fixtures/make-governed-fixture.sh. The only target path referenced is 99-af-e2e/af-l3-gate-probe.md; the only other path mentioned is the required cleanup script. No extraneous or incorrect claims found.",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "orchestrator-submission.md:1 - first line matches required marker exactly",
+      "orchestrator-submission.md:3 - describes area purpose as throwaway fixture of governed-write E2E probes",
+      "orchestrator-submission.md:5 - L2-unmatched -> L3-governed -> never auto-published -> real Human Gate required",
+      "orchestrator-submission.md:7 - full fixture reset via fixtures/make-governed-fixture.sh",
+      "orchestrator-submission.md:5 - only target path referenced is 99-af-e2e/af-l3-gate-probe.md"
+    ],
+    "task_id": "TASK-REAL-L3-mtp8bpmw",
+    "revision": 2,
+    "reviewed_executor_run_id": "RUN-06cadc41",
+    "reviewer_echo": {
+      "task_id": "TASK-REAL-L3-mtp8bpmw",
+      "revision": 2
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(0)"
+      ],
+      "cwd": "/tmp/af-gov-vault",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 18,
+      "started_at": "2026-09-06T03:07:44.973Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": null
+    }
+  ],
+  "governance": {
+    "governance_source": "vault-mcp",
+    "candidate_id": "cand-20260906T030745-c1cc63",
+    "agent_instance_ids": {
+      "bridge_requested": "af-bridge.task-real-l3-mtp8bpmw.5d62d70d",
+      "bridge": "af-bridge.task-real-l3-mtp8bpmw.5d62d70d",
+      "reviewer": "reviewer-claude-l3-mtp8bpmw"
+    },
+    "candidate_raw": "{\n  \"candidate_id\": \"cand-20260906T030745-c1cc63\",\n  \"created\": \"10-收件箱/写回候选/2026-09-06-About the 99-af-e2e fixture area.md\",\n  \"mode\": \"governed\",\n  \"author_agent_instance_id\": \"af-bridge.task-real-l3-mtp8bpmw.5d62d70d\",\n  \"briefing\": \"publish_summary=Purpose and cleanup of the 99-af-e2e fixture area (R2 real-host probe)；publish_tags=tooling,agent-harness\"\n}",
+    "formal_review": {
+      "reviewer_instance_id": "reviewer-claude-l3-mtp8bpmw",
+      "review_decision": "approve",
+      "reasons": "Content is coherent, accurate, and fit for purpose. The page correctly describes the 99-af-e2e/ fixture region as throwaway E2E probe territory, correctly explains the L3-governance fallback for unmatched paths (no auto-publish, requires real Human Gate), and accurately documents the full-reset cleanup mechanism (fixtures/make-governed-fixture.sh) rather than file-by-file deletion. The self-referential note that this page is itself a probe artifact exercising the L3 Human Gate route is honest and consistent with the page's stated purpose. No credentials, fabricated facts, or conflicting claims found. Structure (PAGE block, single logical topic) is clean and publishable to the proposed target."
+    },
+    "policy_decision": "human_required",
+    "published_flag": false,
+    "published_path": null,
+    "policy_evidence": "{\n  \"outcome\": \"human_required\",\n  \"policy_decision\": \"human_required\",\n  \"published\": false,\n  \"candidate_id\": \"cand-20260906T030745-c1cc63\",\n  \"effective_write_class\": \"L3-governed\",\n  \"requested_write_class\": \"L2-knowledge\",\n  \"human_gate\": \"HUMAN_APPROVAL_REQUIRED\",\n  \"gate\": \"HUMAN_APPROVAL_REQUIRED\",\n  \"reason_code\": \"HUMAN_APPROVAL_REQUIRED\",\n  \"reasons\": [\n    \"write-class-override: requested=L2-knowledge effective=L3-governed（自报等级不被信任，一律以判定为准）\",\n    \"classify[99-af-e2e/af-l3-gate-probe.md]: unmatched-path→L3（默认最保守，维持 default-deny 行为）\",\n    \"HUMAN_APPROVAL_REQUIRED：缺少有效 local-human-cli approval\"\n  ],\n  \"review\": {\n    \"decision\": \"approve\",\n    \"reviewer\": \"reviewer-claude-l3-mtp8bpmw\"\n  },\n  \"human_approval\": null\n}"
+  }
+}

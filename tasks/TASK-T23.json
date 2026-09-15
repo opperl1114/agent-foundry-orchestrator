@@ -1,0 +1,109 @@
+{
+  "task_id": "TASK-T23",
+  "goal": "g",
+  "acceptance": "a",
+  "fixture_dir": "/tmp/af-11-work-KUsV3r",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "red_lines": [],
+  "review_rules": [
+    "rule1"
+  ],
+  "requires_mcp": false,
+  "max_revisions": 3,
+  "author_executor": "antigravity",
+  "reviewer_executor": "antigravity",
+  "runs": [
+    {
+      "executor_run_id": "RUN-684fca49",
+      "executor_type": "antigravity",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "CONV-A",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.790Z",
+      "finished_at": "2026-09-07T14:58:15.790Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-532af7cb",
+      "executor_type": "antigravity",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "CONV-R",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.807Z",
+      "finished_at": "2026-09-07T14:58:15.807Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "state": "COMPLETED",
+  "state_version": 3,
+  "updated_at": "2026-09-07T14:58:15.848Z",
+  "next_run_id": "RUN-532af7cb",
+  "last_author_content": "",
+  "author_session_ref": "CONV-A",
+  "author_session_executor_type": "antigravity",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "ok",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "e"
+    ],
+    "task_id": "TASK-T23",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-684fca49",
+    "reviewer_echo": {
+      "task_id": null,
+      "revision": null
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(0)"
+      ],
+      "cwd": "/tmp/af-11-work-KUsV3r",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 41,
+      "started_at": "2026-09-07T14:58:15.807Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": null,
+      "revision": 1
+    }
+  ],
+  "completed_at": "2026-09-07T14:58:15.848Z",
+  "final_review": {
+    "decision": "PASS",
+    "summary": "ok",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "e"
+    ],
+    "task_id": "TASK-T23",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-684fca49",
+    "reviewer_echo": {
+      "task_id": null,
+      "revision": null
+    }
+  }
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+TARGET="${BASH_SOURCE[0]}"
+while [ -L "$TARGET" ]; do
+  TARGET_DIR="$(cd "$(dirname "$TARGET")" && pwd)"
+  TARGET="$(readlink "$TARGET")"
+  [[ $TARGET != /* ]] && TARGET="$TARGET_DIR/$TARGET"
+done
+SCRIPT_DIR="$(cd "$(dirname "$TARGET")" && pwd)"
+exec node "${SCRIPT_DIR}/../af-admin.mjs" "$@"

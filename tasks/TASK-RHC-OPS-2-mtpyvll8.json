@@ -1,0 +1,106 @@
+{
+  "task_id": "TASK-RHC-OPS-2-mtpyvll8",
+  "goal": "RHC-OPS-2 claude task isolation test",
+  "acceptance": "test acceptance",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "fixture_dir": "/tmp",
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "max_revisions": 2,
+  "red_lines": [],
+  "review_rules": [],
+  "state": "COMPLETED",
+  "runs": [
+    {
+      "executor_run_id": "RUN-ffbae451",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "S-claude-3cb4e4",
+      "exit_code": 0,
+      "started_at": "2026-09-06T15:28:53.551Z",
+      "finished_at": "2026-09-06T15:28:53.586Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-46b9bdee",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "S-claude-ca6f25",
+      "exit_code": 0,
+      "started_at": "2026-09-06T15:28:53.590Z",
+      "finished_at": "2026-09-06T15:28:54.574Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "state_version": 3,
+  "updated_at": "2026-09-06T15:28:54.594Z",
+  "next_run_id": "RUN-46b9bdee",
+  "last_author_content": "function add(a, b) { return a + b; }",
+  "author_session_ref": "S-claude-3cb4e4",
+  "author_session_executor_type": "claude",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "all ok",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "file:1"
+    ],
+    "task_id": "TASK-RHC-OPS-2-mtpyvll8",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-ffbae451",
+    "reviewer_echo": {
+      "task_id": null,
+      "revision": null
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(0)"
+      ],
+      "cwd": "/tmp",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 19,
+      "started_at": "2026-09-06T15:28:54.574Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": null,
+      "revision": 1
+    }
+  ],
+  "completed_at": "2026-09-06T15:28:54.594Z",
+  "final_review": {
+    "decision": "PASS",
+    "summary": "all ok",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "file:1"
+    ],
+    "task_id": "TASK-RHC-OPS-2-mtpyvll8",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-ffbae451",
+    "reviewer_echo": {
+      "task_id": null,
+      "revision": null
+    }
+  }
+}

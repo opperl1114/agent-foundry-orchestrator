@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ActionContractSchema",
+  "description": "Agent Foundry Semantic Intent Action Contract Schema (PHASE 10.1 Hardened)",
+  "type": "object",
+  "definitions": {
+    "ContractVersion": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "ActionType": {
+      "type": "string",
+      "enum": [
+        "READ",
+        "ANALYZE",
+        "GENERATE",
+        "PATCH_CODE",
+        "MODIFY_DOCUMENT",
+        "DELETE_ARTIFACT",
+        "MODIFY_KNOWLEDGE_STRUCTURE",
+        "MODIFY_GOVERNANCE",
+        "MODIFY_SYSTEM_CONFIG",
+        "DEPLOY_EXTERNAL"
+      ]
+    },
+    "TargetAssetType": {
+      "type": "string",
+      "enum": [
+        "CODE",
+        "DOCUMENT",
+        "VAULT",
+        "KNOWLEDGE",
+        "GOVERNANCE",
+        "SYSTEM_CONFIG",
+        "TEMP_CACHE"
+      ]
+    },
+    "ImpactScope": {
+      "type": "string",
+      "enum": [
+        "LOCAL",
+        "PROJECT",
+        "SYSTEM"
+      ]
+    },
+    "GateVerdict": {
+      "type": "string",
+      "enum": [
+        "AUTO_ALLOW",
+        "WAITING_HUMAN",
+        "DENY"
+      ]
+    },
+    "AuditEvidence": {
+      "type": "object",
+      "required": ["rule", "evidence", "source"],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "description": "Audit rule identifier"
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Machine/human readable audit evidence details"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source module producing the evidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TargetAsset": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/TargetAssetType",
+          "description": "Canonical classification of target asset"
+        },
+        "path": {
+          "type": "string",
+          "description": "Physical or logical path of the asset"
+        },
+        "scope": {
+          "$ref": "#/definitions/ImpactScope",
+          "description": "Asset blast radius scope"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Impact": {
+      "type": "object",
+      "required": ["scope", "reversible"],
+      "properties": {
+        "scope": {
+          "$ref": "#/definitions/ImpactScope",
+          "description": "Impact blast radius scope"
+        },
+        "reversible": {
+          "type": "boolean",
+          "description": "Whether the action effect can be cleanly reverted"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ActionProposal": {
+      "type": "object",
+      "required": ["action_type", "target", "impact"],
+      "properties": {
+        "contract_version": {
+          "$ref": "#/definitions/ContractVersion",
+          "description": "Semantic action contract version"
+        },
+        "action_type": {
+          "$ref": "#/definitions/ActionType"
+        },
+        "target": {
+          "$ref": "#/definitions/TargetAsset"
+        },
+        "impact": {
+          "$ref": "#/definitions/Impact"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Rationale for the proposed action"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EffectiveAction": {
+      "type": "object",
+      "required": ["contract_version", "action_type", "target", "impact", "required_gate", "audit_evidence"],
+      "properties": {
+        "contract_version": {
+          "$ref": "#/definitions/ContractVersion"
+        },
+        "action_type": {
+          "$ref": "#/definitions/ActionType"
+        },
+        "target": {
+          "$ref": "#/definitions/TargetAsset"
+        },
+        "impact": {
+          "$ref": "#/definitions/Impact"
+        },
+        "required_gate": {
+          "$ref": "#/definitions/GateVerdict"
+        },
+        "audit_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuditEvidence"
+          }
+        },
+        "untrusted_proposal_evidence": {
+          "type": "array",
+          "description": "Quarantined untrusted evidence submitted by caller"
+        },
+        "escalated": {
+          "type": "boolean",
+          "description": "Whether the action was escalated by Deterministic Validator"
+        },
+        "escalation_reason": {
+          "type": "string",
+          "description": "Reason for privilege escalation"
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "contract_version": {
+      "$ref": "#/definitions/ContractVersion"
+    },
+    "action_proposal": {
+      "$ref": "#/definitions/ActionProposal"
+    },
+    "effective_action": {
+      "$ref": "#/definitions/EffectiveAction"
+    }
+  }
+}

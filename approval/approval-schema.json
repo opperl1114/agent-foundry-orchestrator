@@ -1,0 +1,160 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HumanIntentAlignment",
+  "description": "Agent Foundry Human Intent Alignment Gate Schema (PHASE 9-D)",
+  "type": "object",
+  "definitions": {
+    "IntentStatus": {
+      "type": "string",
+      "enum": [
+        "AUTO_ALLOWED",
+        "PENDING_HUMAN",
+        "APPROVED",
+        "CANCELLED"
+      ]
+    },
+    "IntentReason": {
+      "type": "string",
+      "enum": [
+        "routine_task",
+        "routine_cleanup",
+        "direction_confirmation",
+        "knowledge_governance_change",
+        "system_config_change",
+        "destructive_deletion",
+        "external_release",
+        "policy_evaluation_error",
+        "other"
+      ]
+    },
+    "IntentAlignmentRecord": {
+      "type": "object",
+      "required": [
+        "required",
+        "reason",
+        "status"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "description": "Whether human intent confirmation is required before execution"
+        },
+        "reason": {
+          "$ref": "#/definitions/IntentReason",
+          "description": "The policy reason code triggering or bypassing human alignment"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed human-readable explanation of why alignment is needed or bypassed"
+        },
+        "status": {
+          "$ref": "#/definitions/IntentStatus",
+          "description": "Current status of intent alignment"
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approval_reason": {
+          "type": "string"
+        },
+        "cancelled_by": {
+          "type": "string"
+        },
+        "cancelled_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rejection_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ApproveIntentInput": {
+      "type": "object",
+      "required": [
+        "task_id"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "Task identifier to approve"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human approval confirmation rationale"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ApproveIntentOutput": {
+      "type": "object",
+      "required": [
+        "task_id",
+        "status"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "APPROVED"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RejectIntentInput": {
+      "type": "object",
+      "required": [
+        "task_id"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "Task identifier to reject"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human rejection rationale"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RejectIntentOutput": {
+      "type": "object",
+      "required": [
+        "task_id",
+        "status"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "CANCELLED"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

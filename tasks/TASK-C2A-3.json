@@ -1,0 +1,29 @@
+{
+  "task_id": "TASK-C2A-3",
+  "task_mode": "workspace",
+  "goal": "g",
+  "acceptance": "a",
+  "fixture_dir": "/tmp/af-p4c-work-cAA6d3",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "red_lines": [],
+  "review_rules": [
+    "r"
+  ],
+  "requires_mcp": false,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "max_revisions": 3,
+  "runs": [],
+  "revisions_used": 1,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "state": "AUTHOR_RUNNING",
+  "state_version": 1,
+  "updated_at": "2026-09-06T07:00:14.256Z"
+}

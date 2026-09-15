@@ -1,0 +1,124 @@
+{
+  "state": "COMPLETED",
+  "state_version": 3,
+  "runs": [
+    {
+      "executor_run_id": "RUN-9be68fc1",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "8bac421e-bfae-4c57-9012-ad93180f2b7e",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:05:35.668Z",
+      "finished_at": "2026-09-06T03:06:41.864Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-aba4e6d2",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "40858dd7-ba92-481d-bacb-3ea5ae8cb8b4",
+      "exit_code": 0,
+      "started_at": "2026-09-06T03:06:41.869Z",
+      "finished_at": "2026-09-06T03:07:22.045Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "task_id": "TASK-REAL-WS-mtp8bpmw",
+  "goal": "Fix the bug in calc.js: add(a, b) must return a + b instead of a - b. Keep the change minimal.",
+  "acceptance": "node --test calc.test.js passes all tests.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "--test",
+      "calc.test.js"
+    ]
+  },
+  "red_lines": [
+    "Only modify files inside the fixture directory"
+  ],
+  "review_rules": [
+    "calc.js: add(a,b) returns a + b (cite file:line)",
+    "calc.test.js unchanged and still asserts the two cases"
+  ],
+  "fixture_dir": "/tmp/af-r2-ws",
+  "requires_mcp": false,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "max_revisions": 3,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "updated_at": "2026-09-06T03:07:22.121Z",
+  "last_author_content": "Done.\n\n**Changed** `/tmp/af-r2-ws/calc.js:3` — `return a - b;` → `return a + b;` (also removed the stale `// BUG: intentionally wrong` comment). Nothing else touched; the change is one line and stays inside the fixture directory.\n\n**Verification note:** I attempted `node --test calc.test.js` four times, but every invocation was blocked by a permission gate in this environment (`This command requires approval`) and no approval was granted, so the automated test run could not be executed. By inspection, the fix satisfies both assertions: `add(1,2) === 3` and `add(0,0) === 0`. The test suite should pass when run with approval — please run `node --test calc.test.js` to confirm.",
+  "author_session_ref": "8bac421e-bfae-4c57-9012-ad93180f2b7e",
+  "author_session_executor_type": "claude",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "The bug fix is minimal and correct. calc.js:3 now returns a + b instead of the intentional a - b bug (confirmed against HEAD via git show, which still contains `return a - b`). calc.test.js is unchanged — git status shows only calc.js modified — and still asserts both cases at calc.test.js:5-6. By inspection the implementation satisfies the assertions: add(1,2)=1+2=3 matches strictEqual(add(1,2),3) and add(0,0)=0+0=0 matches strictEqual(add(0,0),0), so the acceptance test would pass. Note: I could not execute `node --test calc.test.js` directly because node execution was permission-blocked in this environment (command required approval twice); the pass verdict rests on file content and git diff evidence, which fully determine the test outcome for these two deterministic assertions.",
+    "issues": [
+      "Node command execution (node --test / node -e) was blocked by the permission gate in this reviewer environment, so the acceptance run could not be executed directly; verified by inspection instead."
+    ],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:3 return a + b (was: return a - b at HEAD via `git show HEAD:calc.js`)",
+      "calc.test.js:5 test('add(1,2) === 3', ... assert.strictEqual(add(1, 2), 3)); unchanged",
+      "calc.test.js:6 test('add(0,0) === 0', ... assert.strictEqual(add(0, 0), 0)); unchanged",
+      "`git status --short` → ' M calc.js' (only calc.js modified; calc.test.js untouched)",
+      "`git diff calc.js calc.test.js` → calc.js: `-  return a - b; // BUG: intentionally wrong` / `+  return a + b;`; calc.test.js no diff",
+      "Manual derivation: add(1,2)=3 (matches assertion), add(0,0)=0 (matches assertion)"
+    ],
+    "task_id": "TASK-REAL-WS-mtp8bpmw",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-9be68fc1",
+    "reviewer_echo": {
+      "task_id": "TASK-REAL-WS-mtp8bpmw",
+      "revision": 1
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "--test",
+        "calc.test.js"
+      ],
+      "cwd": "/tmp/af-r2-ws",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 76,
+      "started_at": "2026-09-06T03:07:22.045Z",
+      "stdout_summary": "✔ add(1,2) === 3 (0.554024ms)\n✔ add(0,0) === 0 (0.125428ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 45.62215\n",
+      "stderr_summary": "",
+      "failure_reason": null
+    }
+  ],
+  "completed_at": "2026-09-06T03:07:22.121Z",
+  "final_review": {
+    "decision": "PASS",
+    "summary": "The bug fix is minimal and correct. calc.js:3 now returns a + b instead of the intentional a - b bug (confirmed against HEAD via git show, which still contains `return a - b`). calc.test.js is unchanged — git status shows only calc.js modified — and still asserts both cases at calc.test.js:5-6. By inspection the implementation satisfies the assertions: add(1,2)=1+2=3 matches strictEqual(add(1,2),3) and add(0,0)=0+0=0 matches strictEqual(add(0,0),0), so the acceptance test would pass. Note: I could not execute `node --test calc.test.js` directly because node execution was permission-blocked in this environment (command required approval twice); the pass verdict rests on file content and git diff evidence, which fully determine the test outcome for these two deterministic assertions.",
+    "issues": [
+      "Node command execution (node --test / node -e) was blocked by the permission gate in this reviewer environment, so the acceptance run could not be executed directly; verified by inspection instead."
+    ],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:3 return a + b (was: return a - b at HEAD via `git show HEAD:calc.js`)",
+      "calc.test.js:5 test('add(1,2) === 3', ... assert.strictEqual(add(1, 2), 3)); unchanged",
+      "calc.test.js:6 test('add(0,0) === 0', ... assert.strictEqual(add(0, 0), 0)); unchanged",
+      "`git status --short` → ' M calc.js' (only calc.js modified; calc.test.js untouched)",
+      "`git diff calc.js calc.test.js` → calc.js: `-  return a - b; // BUG: intentionally wrong` / `+  return a + b;`; calc.test.js no diff",
+      "Manual derivation: add(1,2)=3 (matches assertion), add(0,0)=0 (matches assertion)"
+    ],
+    "task_id": "TASK-REAL-WS-mtp8bpmw",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-9be68fc1",
+    "reviewer_echo": {
+      "task_id": "TASK-REAL-WS-mtp8bpmw",
+      "revision": 1
+    }
+  }
+}

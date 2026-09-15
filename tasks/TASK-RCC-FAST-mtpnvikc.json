@@ -1,0 +1,128 @@
+{
+  "task_id": "TASK-RCC-FAST-mtpnvikc",
+  "task_mode": "workspace",
+  "goal": "Fix the bug in calc.js: add(a, b) must return a + b instead of a - b. Keep the change minimal. First line of calc.js must stay a comment describing add().",
+  "acceptance": "node --test calc.test.js passes all tests.",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "--test",
+      "calc.test.js"
+    ]
+  },
+  "allow_legacy_shell_acceptance": false,
+  "candidate": null,
+  "governance_env": null,
+  "red_lines": [
+    "Only modify files inside the fixture directory",
+    "Do not delete or weaken the existing tests"
+  ],
+  "review_rules": [
+    "calc.js: add(a,b) returns a + b (cite file:line)",
+    "calc.test.js is unchanged and still asserts add(1,2)===3 and add(0,0)===0"
+  ],
+  "fixture_dir": "/tmp/af-rc1-b",
+  "requires_mcp": false,
+  "author_executor": "claude",
+  "reviewer_executor": "claude",
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "max_revisions": 3,
+  "state": "COMPLETED",
+  "state_version": 4,
+  "created_at": "2026-09-06T10:20:55.097Z",
+  "updated_at": "2026-09-06T10:22:30.076Z",
+  "runs": [
+    {
+      "executor_run_id": "RUN-d701109d",
+      "executor_type": "claude",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "c08bf5ec-e1cf-46c1-a730-0b32f229629a",
+      "exit_code": 0,
+      "started_at": "2026-09-06T10:20:55.107Z",
+      "finished_at": "2026-09-06T10:21:58.223Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-c165c2db",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "211e436d-2586-4313-ac25-47c1e60112e5",
+      "exit_code": 0,
+      "started_at": "2026-09-06T10:21:58.227Z",
+      "finished_at": "2026-09-06T10:22:30.002Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "next_run_id": "RUN-c165c2db",
+  "last_author_content": "Done. Here's the summary.\n\n**Change** (`/tmp/af-rc1-b/calc.js`):\n- Line 3: `return a - b; // BUG: intentionally wrong` → `return a + b;`\n- First-line comment `// Adds two numbers.` preserved; no other files touched; tests untouched.\n\n**Verification by inspection** (meets the tests):\n- `add(1, 2)` → `1 + 2 = 3` ✓ (test expects 3)\n- `add(0, 0)` → `0` ✓\n\n**Caveat**: I attempted to run `node --test calc.test.js` (the acceptance command) but this environment's permission gate requires user approval for `node` execution, so I couldn't capture automated evidence. Please run `node --test calc.test.js` in `/tmp/af-rc1-b` to confirm — the change is a one-line fix and should pass both tests.",
+  "author_session_ref": "c08bf5ec-e1cf-46c1-a730-0b32f229629a",
+  "author_session_executor_type": "claude",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "The bug fix in calc.js is minimal and correct. Line 1 remains the comment '// Adds two numbers.' (calc.js:1) describing add(). The add function now returns a + b (calc.js:3) instead of the previous a - b; the diff shows the only change is that single return line, with the BUG comment removed. calc.test.js is unchanged per git diff (no output for that file) and still asserts strictEqual(add(1,2),3) (calc.test.js:5) and strictEqual(add(0,0),0) (calc.test.js:6). Since add is a pure function and 1+2=3 and 0+0=0, both assertions deterministically pass. Note: I could not execute `node --test calc.test.js` in this environment (the command was blocked pending approval), so automated-run evidence is unavailable, but the acceptance criterion holds by direct inspection of the pure arithmetic.",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:1 -> '// Adds two numbers.' (first line is a comment describing add())",
+      "calc.js:3 -> 'return a + b;' (add(a,b) returns a + b)",
+      "git diff HEAD calc.test.js -> no output (calc.test.js unchanged)",
+      "calc.test.js:5 -> assert.strictEqual(add(1, 2), 3)",
+      "calc.test.js:6 -> assert.strictEqual(add(0, 0), 0)",
+      "node --test calc.test.js -> could not run (command blocked pending approval); PASS based on deterministic pure-function analysis"
+    ],
+    "task_id": "TASK-RCC-FAST-mtpnvikc",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-d701109d",
+    "reviewer_echo": {
+      "task_id": "TASK-RCC-FAST-mtpnvikc",
+      "revision": 1
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "--test",
+        "calc.test.js"
+      ],
+      "cwd": "/tmp/af-rc1-b",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 74,
+      "started_at": "2026-09-06T10:22:30.002Z",
+      "stdout_summary": "✔ add(1,2) === 3 (0.607104ms)\n✔ add(0,0) === 0 (0.109119ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 45.90733\n",
+      "stderr_summary": "",
+      "failure_reason": null,
+      "revision": 1
+    }
+  ],
+  "completed_at": "2026-09-06T10:22:30.076Z",
+  "final_review": {
+    "decision": "PASS",
+    "summary": "The bug fix in calc.js is minimal and correct. Line 1 remains the comment '// Adds two numbers.' (calc.js:1) describing add(). The add function now returns a + b (calc.js:3) instead of the previous a - b; the diff shows the only change is that single return line, with the BUG comment removed. calc.test.js is unchanged per git diff (no output for that file) and still asserts strictEqual(add(1,2),3) (calc.test.js:5) and strictEqual(add(0,0),0) (calc.test.js:6). Since add is a pure function and 1+2=3 and 0+0=0, both assertions deterministically pass. Note: I could not execute `node --test calc.test.js` in this environment (the command was blocked pending approval), so automated-run evidence is unavailable, but the acceptance criterion holds by direct inspection of the pure arithmetic.",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "calc.js:1 -> '// Adds two numbers.' (first line is a comment describing add())",
+      "calc.js:3 -> 'return a + b;' (add(a,b) returns a + b)",
+      "git diff HEAD calc.test.js -> no output (calc.test.js unchanged)",
+      "calc.test.js:5 -> assert.strictEqual(add(1, 2), 3)",
+      "calc.test.js:6 -> assert.strictEqual(add(0, 0), 0)",
+      "node --test calc.test.js -> could not run (command blocked pending approval); PASS based on deterministic pure-function analysis"
+    ],
+    "task_id": "TASK-RCC-FAST-mtpnvikc",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-d701109d",
+    "reviewer_echo": {
+      "task_id": "TASK-RCC-FAST-mtpnvikc",
+      "revision": 1
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ActionTypes",
+  "description": "Agent Foundry Canonical Semantic Action Types and Assets (PHASE 10.1 Hardened)",
+  "contract_version": "1.0",
+  "action_types": [
+    "READ",
+    "ANALYZE",
+    "GENERATE",
+    "PATCH_CODE",
+    "MODIFY_DOCUMENT",
+    "DELETE_ARTIFACT",
+    "MODIFY_KNOWLEDGE_STRUCTURE",
+    "MODIFY_GOVERNANCE",
+    "MODIFY_SYSTEM_CONFIG",
+    "DEPLOY_EXTERNAL"
+  ],
+  "target_asset_types": [
+    "CODE",
+    "DOCUMENT",
+    "VAULT",
+    "KNOWLEDGE",
+    "GOVERNANCE",
+    "SYSTEM_CONFIG",
+    "TEMP_CACHE"
+  ],
+  "impact_scopes": [
+    "LOCAL",
+    "PROJECT",
+    "SYSTEM"
+  ],
+  "gates": [
+    "AUTO_ALLOW",
+    "WAITING_HUMAN",
+    "DENY"
+  ]
+}

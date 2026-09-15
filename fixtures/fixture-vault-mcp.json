@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "agent-foundry-vault-fixture": {
+      "command": "node",
+      "args": ["/mnt/c/Users/relaret/vault-mcp/server.mjs"],
+      "env": {
+        "VAULT_ROOT": "/tmp/af-gov-vault",
+        "VAULT_MCP_STATE_DB": "/tmp/af-gov-vault/state.db"
+      }
+    }
+  }
+}

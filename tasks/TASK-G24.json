@@ -1,0 +1,42 @@
+{
+  "task_id": "TASK-G24",
+  "task_mode": "governed_write",
+  "goal": "produce a knowledge page",
+  "acceptance": "a",
+  "fixture_dir": "/tmp/af-p2-work-uMCdO6",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "red_lines": [],
+  "review_rules": [
+    "r"
+  ],
+  "requires_mcp": true,
+  "author_executor": "antigravity",
+  "reviewer_executor": "claude",
+  "max_revisions": 3,
+  "candidate": {
+    "title": "t",
+    "target": "concepts/x.md",
+    "knowledge_class": "procedural"
+  },
+  "runs": [],
+  "revisions_used": 1,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "state": "FAILED",
+  "state_version": 2,
+  "updated_at": "2026-09-07T14:58:15.980Z",
+  "failure_reason": "executor antigravity is not schedulable (user decision: agy is excluded from automation)",
+  "error_classification": {
+    "category": "TRANSIENT_FAULT",
+    "retryable": true,
+    "safety_action": "NONE",
+    "reason": "executor antigravity is not schedulable (user decision: agy is excluded from automation)"
+  },
+  "retryable": true
+}

@@ -1,0 +1,47 @@
+{
+  "task_id": "TASK-RHC-OPS-1-mtpyuttl",
+  "goal": "RHC-OPS-1 real failure circuit open test",
+  "acceptance": "test acceptance",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "fixture_dir": "/tmp",
+  "author_executor": "antigravity",
+  "reviewer_executor": "claude",
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "max_revisions": 2,
+  "red_lines": [],
+  "review_rules": [],
+  "state": "FAILED",
+  "runs": [
+    {
+      "executor_run_id": "RUN-75e04054",
+      "executor_type": "antigravity",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "failed",
+      "session_ref": "S-antigravity-b44ed4",
+      "exit_code": 1,
+      "started_at": "2026-09-06T15:28:17.558Z",
+      "finished_at": "2026-09-06T15:28:17.597Z",
+      "error": "403 PERMISSION_DENIED: This service has been disabled in this account for violation of Terms of Service\n"
+    }
+  ],
+  "revisions_used": 1,
+  "state_version": 2,
+  "updated_at": "2026-09-06T15:28:17.602Z",
+  "next_run_id": "RUN-75e04054",
+  "error_classification": {
+    "category": "ACCOUNT_POLICY",
+    "retryable": false,
+    "safety_action": "OPEN_MANUAL_RESET",
+    "reason": "account or policy violation detected (403/TOS_VIOLATION)"
+  },
+  "retryable": false,
+  "failure_reason": "author run failed: 403 PERMISSION_DENIED: This service has been disabled in this account for violation of Terms of Service\n"
+}

@@ -1,0 +1,189 @@
+{
+  "task_id": "TASK-T13",
+  "goal": "g",
+  "acceptance": "a",
+  "fixture_dir": "/tmp/af-11-work-KUsV3r",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(1)"
+    ]
+  },
+  "red_lines": [],
+  "review_rules": [
+    "rule1"
+  ],
+  "requires_mcp": false,
+  "max_revisions": 3,
+  "author_executor": "antigravity",
+  "reviewer_executor": "claude",
+  "runs": [
+    {
+      "executor_run_id": "RUN-9382f0c5",
+      "executor_type": "antigravity",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "S",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.465Z",
+      "finished_at": "2026-09-07T14:58:15.465Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-21dedff4",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "R",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.480Z",
+      "finished_at": "2026-09-07T14:58:15.480Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-eaab7e2c",
+      "executor_type": "antigravity",
+      "assigned_role": "author",
+      "purpose": "fix",
+      "status": "completed",
+      "session_ref": "S",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.543Z",
+      "finished_at": "2026-09-07T14:58:15.543Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-d54392ec",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "R",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.558Z",
+      "finished_at": "2026-09-07T14:58:15.558Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-8c6a75fe",
+      "executor_type": "antigravity",
+      "assigned_role": "author",
+      "purpose": "fix",
+      "status": "completed",
+      "session_ref": "S",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.614Z",
+      "finished_at": "2026-09-07T14:58:15.614Z",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-9217774a",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "R",
+      "exit_code": 0,
+      "started_at": "2026-09-07T14:58:15.631Z",
+      "finished_at": "2026-09-07T14:58:15.631Z",
+      "error": null
+    }
+  ],
+  "revisions_used": 3,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "state": "FAILED",
+  "state_version": 9,
+  "updated_at": "2026-09-07T14:58:15.672Z",
+  "next_run_id": "RUN-9217774a",
+  "last_author_content": "",
+  "author_session_ref": "S",
+  "author_session_executor_type": "antigravity",
+  "review_revision": 3,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "ok",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "e"
+    ],
+    "task_id": "TASK-T13",
+    "revision": 3,
+    "reviewed_executor_run_id": "RUN-8c6a75fe",
+    "reviewer_echo": {
+      "task_id": null,
+      "revision": null
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(1)"
+      ],
+      "cwd": "/tmp/af-11-work-KUsV3r",
+      "legacy_shell": false,
+      "exit_code": 1,
+      "duration_ms": 31,
+      "started_at": "2026-09-07T14:58:15.480Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": "exit 1",
+      "revision": 1
+    },
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(1)"
+      ],
+      "cwd": "/tmp/af-11-work-KUsV3r",
+      "legacy_shell": false,
+      "exit_code": 1,
+      "duration_ms": 33,
+      "started_at": "2026-09-07T14:58:15.558Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": "exit 1",
+      "revision": 2
+    },
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(1)"
+      ],
+      "cwd": "/tmp/af-11-work-KUsV3r",
+      "legacy_shell": false,
+      "exit_code": 1,
+      "duration_ms": 41,
+      "started_at": "2026-09-07T14:58:15.631Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": "exit 1",
+      "revision": 3
+    }
+  ],
+  "last_acceptance_failure": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(1)"
+    ],
+    "cwd": "/tmp/af-11-work-KUsV3r",
+    "legacy_shell": false,
+    "exit_code": 1,
+    "duration_ms": 41,
+    "started_at": "2026-09-07T14:58:15.631Z",
+    "stdout_summary": "",
+    "stderr_summary": "",
+    "failure_reason": "exit 1",
+    "revision": 3
+  },
+  "failure_reason": "MAX_REVISIONS_EXCEEDED"
+}

@@ -1,0 +1,129 @@
+{
+  "task_id": "TASK-G7",
+  "task_mode": "governed_write",
+  "goal": "produce a knowledge page",
+  "acceptance": "a",
+  "fixture_dir": "/tmp/af-p2-work-uMCdO6",
+  "acceptance_cmd": {
+    "command": "node",
+    "args": [
+      "-e",
+      "process.exit(0)"
+    ]
+  },
+  "red_lines": [],
+  "review_rules": [
+    "r"
+  ],
+  "requires_mcp": true,
+  "author_executor": "antigravity",
+  "reviewer_executor": "claude",
+  "max_revisions": 3,
+  "candidate": {
+    "title": "t",
+    "target": "concepts/x.md",
+    "knowledge_class": "procedural"
+  },
+  "runs": [
+    {
+      "executor_run_id": "RUN-2c3c4d98",
+      "executor_type": "antigravity",
+      "assigned_role": "author",
+      "purpose": "author",
+      "status": "completed",
+      "session_ref": "S1",
+      "exit_code": 0,
+      "started_at": "s",
+      "finished_at": "f",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-7683cb8d",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "review",
+      "status": "completed",
+      "session_ref": "R1",
+      "exit_code": 0,
+      "started_at": "s",
+      "finished_at": "f",
+      "error": null
+    },
+    {
+      "executor_run_id": "RUN-a",
+      "executor_type": "claude",
+      "assigned_role": "reviewer",
+      "purpose": "formal_review",
+      "status": "completed",
+      "session_ref": "R2",
+      "exit_code": 0,
+      "started_at": "s",
+      "finished_at": "f",
+      "error": null
+    }
+  ],
+  "revisions_used": 1,
+  "author_role": "author",
+  "reviewer_role": "reviewer",
+  "state": "WAITING_HUMAN",
+  "state_version": 7,
+  "updated_at": "2026-09-07T14:58:15.418Z",
+  "next_run_id": "RUN-7683cb8d",
+  "last_author_content": "content",
+  "author_session_ref": "S1",
+  "author_session_executor_type": "antigravity",
+  "review_revision": 1,
+  "last_review": {
+    "decision": "PASS",
+    "summary": "ok",
+    "issues": [],
+    "required_changes": [],
+    "evidence": [
+      "e"
+    ],
+    "task_id": "TASK-G7",
+    "revision": 1,
+    "reviewed_executor_run_id": "RUN-2c3c4d98",
+    "reviewer_echo": {
+      "task_id": null,
+      "revision": null
+    }
+  },
+  "acceptance_runs": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "process.exit(0)"
+      ],
+      "cwd": "/tmp/af-p2-work-uMCdO6",
+      "legacy_shell": false,
+      "exit_code": 0,
+      "duration_ms": 32,
+      "started_at": "2026-09-07T14:58:15.343Z",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "failure_reason": null,
+      "revision": 1
+    }
+  ],
+  "governance": {
+    "governance_source": "vault-mcp",
+    "candidate_id": "CAND-1",
+    "agent_instance_ids": {
+      "bridge_requested": null,
+      "bridge": "BRIDGE-INST-1",
+      "reviewer": "REV-1"
+    },
+    "candidate_raw": "ok",
+    "formal_review": {
+      "reviewer_instance_id": "REV-1",
+      "review_decision": "approve",
+      "reasons": "ok"
+    },
+    "policy_decision": "human_required",
+    "published_flag": false,
+    "published_path": null,
+    "policy_evidence": "{\"policy_decision\":\"human_required\",\"effective_write_class\":\"L3-governed\"}"
+  }
+}
