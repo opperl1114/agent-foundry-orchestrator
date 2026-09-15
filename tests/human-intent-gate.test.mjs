@@ -16,7 +16,7 @@ import assert from 'node:assert';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   alignTaskIntent,
@@ -32,17 +32,23 @@ import {
 } from '../approval/intent-policy.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import * as orchestrator from '../orchestrator.mjs';
-import {
-  approveIntentHandler,
-  approveIntentToolDefinition,
-} from '../../agent-foundry-gateway/tools/approve-intent.mjs';
-import {
-  rejectIntentHandler,
-  rejectIntentToolDefinition,
-} from '../../agent-foundry-gateway/tools/reject-intent.mjs';
 
 const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APPROVAL_DIR = join(ROOT_DIR, 'approval');
+
+// The conversation gateway entry layer lives in its own repository. When that
+// sibling checkout is absent (a fresh machine, CI) the tests run against the
+// self-contained fixture of the same contract, so the suite stays hermetic.
+// AF_GATEWAY_DIR points the tests at a real gateway.
+const GATEWAY_DIR = process.env.AF_GATEWAY_DIR ||
+  (existsSync(join(ROOT_DIR, '../agent-foundry-gateway'))
+    ? join(ROOT_DIR, '../agent-foundry-gateway')
+    : join(ROOT_DIR, 'fixtures', 'gateway'));
+
+const { approveIntentHandler, approveIntentToolDefinition } =
+  await import(pathToFileURL(join(GATEWAY_DIR, 'tools', 'approve-intent.mjs')).href);
+const { rejectIntentHandler, rejectIntentToolDefinition } =
+  await import(pathToFileURL(join(GATEWAY_DIR, 'tools', 'reject-intent.mjs')).href);
 
 function createTempDir(prefix = 'af-hi-test-') {
   return mkdtempSync(join(tmpdir(), prefix));

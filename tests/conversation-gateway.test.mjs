@@ -14,28 +14,29 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import {
-  handleJsonRpcMessage,
-  TOOLS,
-  SERVER_INFO,
-} from '../../agent-foundry-gateway/server.mjs';
-import {
-  submitTaskHandler,
-  FORBIDDEN_GOVERNANCE_FIELDS,
-} from '../../agent-foundry-gateway/tools/submit-task.mjs';
-import {
-  taskStatusHandler,
-} from '../../agent-foundry-gateway/tools/task-status.mjs';
 import * as orchestrator from '../orchestrator.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 
 const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
-const GATEWAY_SERVER_PATH = process.env.AF_GATEWAY_SERVER ||
-  (existsSync(join(ROOT_DIR, '../agent-foundry-gateway/server.mjs'))
-    ? join(ROOT_DIR, '../agent-foundry-gateway/server.mjs')
-    : '/mnt/c/Users/relaret/agent-foundry-gateway/server.mjs');
+
+// The conversation gateway entry layer lives in its own repository. When that
+// sibling checkout is absent (a fresh machine, CI) the tests run against the
+// self-contained fixture of the same contract, so the suite stays hermetic.
+// AF_GATEWAY_DIR / AF_GATEWAY_SERVER point the tests at a real gateway.
+const GATEWAY_DIR = process.env.AF_GATEWAY_DIR ||
+  (existsSync(join(ROOT_DIR, '../agent-foundry-gateway'))
+    ? join(ROOT_DIR, '../agent-foundry-gateway')
+    : join(ROOT_DIR, 'fixtures', 'gateway'));
+const GATEWAY_SERVER_PATH = process.env.AF_GATEWAY_SERVER || join(GATEWAY_DIR, 'server.mjs');
+
+const { handleJsonRpcMessage, TOOLS, SERVER_INFO } =
+  await import(pathToFileURL(GATEWAY_SERVER_PATH).href);
+const { submitTaskHandler, FORBIDDEN_GOVERNANCE_FIELDS } =
+  await import(pathToFileURL(join(GATEWAY_DIR, 'tools', 'submit-task.mjs')).href);
+const { taskStatusHandler } =
+  await import(pathToFileURL(join(GATEWAY_DIR, 'tools', 'task-status.mjs')).href);
 
 function createTempDir(prefix = 'af-cg-test-') {
   return mkdtempSync(join(tmpdir(), prefix));
@@ -291,11 +292,8 @@ test('TEST CG-3: Task进入现有 Orchestrator (Orchestrator -> Scheduler -> Rou
 // TEST CG-4: Gateway 不能直接调用 executor
 // ----------------------------------------------------------------------------
 test('TEST CG-4: Gateway不能直接调用executor (架构边界与静态代码不变性)', () => {
-  const gatewayDir = process.env.AF_GATEWAY_DIR ||
-    (existsSync(join(ROOT_DIR, '../agent-foundry-gateway'))
-      ? join(ROOT_DIR, '../agent-foundry-gateway')
-      : '/mnt/c/Users/relaret/agent-foundry-gateway');
-  assert(existsSync(gatewayDir), 'agent-foundry-gateway must exist');
+  const gatewayDir = GATEWAY_DIR;
+  assert(existsSync(gatewayDir), 'the conversation gateway entry layer must exist');
 
   // Collect all JS/MJS source files in gateway
   const filesToScan = [
