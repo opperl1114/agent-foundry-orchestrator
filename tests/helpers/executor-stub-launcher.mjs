@@ -59,9 +59,27 @@ if (args.includes('__AF_HANG__')) {
 }
 `;
 
-function writeStub(fileName) {
+const POLICY_DENIAL_SOURCE = `#!/usr/bin/env node
+import { appendFileSync } from 'node:fs';
+
+const args = process.argv.slice(2);
+
+if (process.env.AF_STUB_ARGV_LOG) {
+  appendFileSync(process.env.AF_STUB_ARGV_LOG, JSON.stringify(args) + '\\n');
+}
+
+// JSON Lines on stdout with an EMPTY stderr, the way codex --json reports a
+// refusal: an account/ToS denial only ever shows up on stdout.
+process.stdout.write(JSON.stringify({
+  type: 'error',
+  message: 'unexpected status 403 Forbidden: account suspended for Terms of Service violation',
+}) + '\\n');
+process.exitCode = 1;
+`;
+
+function writeStub(fileName, source = STUB_SOURCE) {
   const file = join(STUB_DIR, fileName);
-  writeFileSync(file, STUB_SOURCE, 'utf8');
+  writeFileSync(file, source, 'utf8');
   chmodSync(file, 0o755);
   return file;
 }
@@ -70,3 +88,6 @@ function writeStub(fileName) {
 // it points at the cline-af adapter, so the stub keeps that name.
 export const CLINE_STUB = writeStub('cline-af-stub');
 export const VERTEX_STUB = writeStub('vertex-gemini-af-stub');
+
+// Stub that reports an account/ToS refusal on stdout and exits non-zero.
+export const POLICY_DENIAL_STUB = writeStub('cline-af-policy-denial', POLICY_DENIAL_SOURCE);
