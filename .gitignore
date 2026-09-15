@@ -11,6 +11,9 @@ runtime/operator-activity/*
 runtime/operator-input/*
 runtime/operator-received/*
 
+# Per-instance scheduler state (recreated on first start, never committed)
+runtime/scheduler.json
+
 # Historical execution tasks (keep only standard templates)
 tasks/*.json
 !tasks/task-template.json
