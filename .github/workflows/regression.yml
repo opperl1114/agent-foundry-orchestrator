@@ -55,3 +55,13 @@ jobs:
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
+
+      # Runtime state is per-machine and must not be versioned: a committed
+      # circuit-breaker state can ship a banned executor as the factory default
+      # and records operator reset activity. Only .gitkeep belongs here.
+      - name: no runtime state is tracked
+        run: |
+          tracked=$(git ls-files runtime/ | grep -v -E '\.gitkeep$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::runtime state must not be tracked:"; echo "$tracked"; exit 1
+          fi

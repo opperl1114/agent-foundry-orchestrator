@@ -11,8 +11,14 @@ runtime/operator-activity/*
 runtime/operator-input/*
 runtime/operator-received/*
 
-# Per-instance scheduler state (recreated on first start, never committed)
+# Per-instance runtime state (recreated on first start, never committed).
+# The circuit-breaker state is per-machine: any real run rewrites it (dirtying
+# the tree), a committed OPEN_MANUAL_RESET would ship a banned executor as the
+# "factory default", and its last_reset field records who reset a breaker and
+# why - which must not end up in public history. The guard treats a missing file
+# as "first start, everything CLOSED", so not tracking it changes nothing.
 runtime/scheduler.json
+runtime/executor-safety-state.json
 
 # Historical execution tasks (keep only standard templates)
 tasks/*.json
