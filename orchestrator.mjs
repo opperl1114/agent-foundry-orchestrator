@@ -612,7 +612,12 @@ async function settleIfPublished(task, bridge) {
   try {
     await bridge.client.call('vault_read', { path: mirror.published_path });
     return 'published'; // vault-confirmed: the file is really there
-  } catch {
+  } catch (err) {
+    // Only a vault-level rejection ("that file is not there") downgrades the
+    // claim. Any other failure (bridge misconfigured, client undefined, timeout)
+    // must propagate: silently clearing the flag would republish a page that may
+    // already be live.
+    if (!err?.vault_rejected) throw err;
     mirror.published_flag = false; // claim not confirmed by vault; republish
     saveTask(task);
     return null;
@@ -1616,7 +1621,7 @@ if (isMain) {
     // natural completion): never overwrite a terminal state with CANCELLED.
     const t = loadTask(tid);
     const nowTs2 = new Date().toISOString();
-    t.cancel_requested_at = t0.cancel_requested_at ?? t0.updated_at ?? now;
+    t.cancel_requested_at = t0.cancel_requested_at ?? t0.updated_at ?? nowTs2;
     t.cancel_reason = reason;
     t.cancelled_by = 'operator';
     const lastRun = t.runs[t.runs.length - 1] ?? null;

@@ -1,0 +1,15 @@
+{
+  "name": "agent-foundry-orchestrator",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Control Plane for multi-executor task workflows (zero runtime dependencies).",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:contract": "node --test tests/action-contract.test.mjs tests/action-contract-hardening.test.mjs",
+    "admin": "node af-admin.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

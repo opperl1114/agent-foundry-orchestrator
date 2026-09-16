@@ -25,18 +25,25 @@ const ROOT = join(__dirname, '..');
 
 export const CURRENT_CONTRACT_VERSION = '1.0';
 
-export const CANONICAL_ACTION_TYPES = Object.freeze([
-  'READ',
-  'ANALYZE',
-  'GENERATE',
-  'PATCH_CODE',
-  'MODIFY_DOCUMENT',
-  'DELETE_ARTIFACT',
-  'MODIFY_KNOWLEDGE_STRUCTURE',
-  'MODIFY_GOVERNANCE',
-  'MODIFY_SYSTEM_CONFIG',
-  'DEPLOY_EXTERNAL',
-]);
+// The canonical action list lives in contracts/action-types.json and is READ
+// from there: keeping a second hardcoded copy here meant the contract file could
+// drift from the validator that enforces it, silently, with the docs pointing at
+// the file as "the single source". A missing or malformed contract yields an
+// empty list, so every proposal is rejected (fail-closed) rather than accepted
+// against an unknown rule set.
+const ACTION_TYPES_CONTRACT = join(ROOT, 'contracts', 'action-types.json');
+
+function loadCanonicalActionTypes() {
+  try {
+    const parsed = JSON.parse(readFileSync(ACTION_TYPES_CONTRACT, 'utf8'));
+    if (Array.isArray(parsed?.action_types) && parsed.action_types.length > 0) {
+      return parsed.action_types.map(String);
+    }
+  } catch { /* fall through to the empty (fail-closed) list */ }
+  return [];
+}
+
+export const CANONICAL_ACTION_TYPES = Object.freeze(loadCanonicalActionTypes());
 
 export const GATE_VERDICTS = Object.freeze({
   AUTO_ALLOW: 'AUTO_ALLOW',

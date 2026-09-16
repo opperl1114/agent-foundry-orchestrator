@@ -60,7 +60,7 @@ function makeFakeAdapter(type, onRun) {
 
 test('ORCH-WT-1: Multi-step DAG with parallel Git Worktrees completes and merges cleanly', async () => {
   const repoDir = makeTempDir();
-  ensureGitRepo(repoDir);
+  ensureGitRepo(repoDir, { initIfMissing: true });
   writeFileSync(join(repoDir, 'package.json'), JSON.stringify({ name: 'wt-test', version: '1.0.0' }));
   commitWorktree({ worktreeDir: repoDir, message: 'chore: initial baseline' });
 
@@ -137,7 +137,7 @@ test('ORCH-WT-1: Multi-step DAG with parallel Git Worktrees completes and merges
 
 test('ORCH-WT-2: Parallel worktrees with merge conflict fails closed and records MERGE_CONFLICT', async () => {
   const repoDir = makeTempDir();
-  ensureGitRepo(repoDir);
+  ensureGitRepo(repoDir, { initIfMissing: true });
   writeFileSync(join(repoDir, 'shared.js'), 'const version = 1;\n');
   commitWorktree({ worktreeDir: repoDir, message: 'chore: initial shared file' });
 

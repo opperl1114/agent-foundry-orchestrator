@@ -22,6 +22,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { Scheduler } from '../lib/scheduler.mjs';
+import { classifyExecutionError } from '../lib/executor-error-classifier.mjs';
 import { saveTaskAtomic, readTaskFile } from '../lib/store.mjs';
 import { recoverTask, scanRecovery } from '../lib/recovery.mjs';
 import { acquireTaskLock, releaseTaskLock, readLock, LockHeldError } from '../lib/tasklock.mjs';
@@ -222,6 +223,13 @@ test('TEST PROD-2: executor 403 -> no retry, no fallback (fail closed)', async (
       supportsMcpUnattended: true,
       async run(capsule) {
         vgRunCalls += 1;
+        // N11: report the RAW evidence and let the real classifier decide. This
+        // test used to inject a pre-baked error_classification, which is why the
+        // classifier's stdout blind spot (C1) could sit here undetected: the
+        // assertion was checking the test's own literal, not the product code.
+        // The refusal is on stdout with an empty stderr, exactly the shape codex
+        // produces with --json.
+        const stdout = '{"type":"error","message":"unexpected status 403 Forbidden: account suspended for Terms of Service violation"}';
         return {
           executor_run_id: 'RUN-VG-403',
           executor_type: 'vertex-gemini',
@@ -233,12 +241,11 @@ test('TEST PROD-2: executor 403 -> no retry, no fallback (fail closed)', async (
           started_at: new Date().toISOString(),
           finished_at: new Date().toISOString(),
           error: '403 PERMISSION_DENIED: Service disabled for TOS_VIOLATION',
-          error_classification: {
-            category: 'ACCOUNT_POLICY',
-            retryable: false,
-            safety_action: 'OPEN_CIRCUIT_MANUAL_RESET',
-            reason: 'ACCOUNT_DISABLED_403',
-          },
+          error_classification: classifyExecutionError('vertex-gemini', {
+            exit_code: 1,
+            stdout,
+            stderr: '',
+          }),
         };
       },
       cancel() { return { cancelled: true }; },
@@ -287,6 +294,10 @@ test('TEST PROD-2: executor 403 -> no retry, no fallback (fail closed)', async (
     const finalTask = readTaskFile(join(workDir, `${taskId}.json`));
     assert.strictEqual(finalTask.state, 'FAILED', 'Task must fail closed immediately');
     assert.strictEqual(finalTask.error_classification?.category, 'ACCOUNT_POLICY');
+    // The safety action comes from the real classifier (the old test asserted a
+    // literal 'OPEN_CIRCUIT_MANUAL_RESET' that no code path produces).
+    assert.strictEqual(finalTask.error_classification?.safety_action, 'OPEN_MANUAL_RESET');
+    assert.strictEqual(finalTask.error_classification?.retryable, false);
     assert.strictEqual(vgRunCalls, 1, 'Must NOT retry on 403 ACCOUNT_POLICY (retries = 0)');
     assert.strictEqual(claudeRunCalls, 0, 'Must NEVER fallback on 403 ACCOUNT_POLICY (fallbacks called = 0)');
 

@@ -138,26 +138,34 @@ test('INV-4: No Credential Persistence: scans runtime and tasks for zero secret 
     join(ROOT_DIR, 'locks'),
   ];
 
-  const forbiddenKeyRegex = /("token"\s*:|"api_key"\s*:|"secret"\s*:|"password"\s*:|"bearer\s+[a-zA-Z0-9_\-\.]+)/i;
+  // Broader pattern: bare token-shaped keys, authorization headers, and the
+  // generic Bearer form - not just the three keys the old test looked for.
+  // (The provider-key prefix needs a realistic length: `sk-` followed by 8+
+  // characters also matches an innocent "TASK-TEMPLATE-001".)
+  const forbiddenKeyRegex =
+    /("(?:token|api[_-]?key|secret|password|authorization|access[_-]?token|refresh[_-]?token|credential)"\s*:|bearer\s+[a-zA-Z0-9_\-.]{20,}|sk-[a-zA-Z0-9]{24,})/i;
 
-  for (const dir of dirsToScan) {
-    if (!existsSync(dir)) continue;
-    const files = readdirSync(dir);
-    for (const file of files) {
-      const p = join(dir, file);
-      let st;
-      try { st = statSync(p); } catch { continue; }
-      if (st.isFile()) {
-        let content;
-        try { content = readFileSync(p, 'utf8'); } catch { continue; }
-        assert.strictEqual(
-          forbiddenKeyRegex.test(content),
-          false,
-          `Credential or token pattern detected in persisted file: ${p}`
-        );
-      }
+  // RECURSIVE walk: the old scan only looked at the top level of each directory
+  // and therefore missed runtime/archive/, runtime/runs/ and every operator-*
+  // subdirectory.
+  const walk = (dir) => {
+    let entries;
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const p = join(dir, entry.name);
+      if (entry.isDirectory()) { walk(p); continue; }
+      if (!entry.isFile()) continue;
+      let content;
+      try { content = readFileSync(p, 'utf8'); } catch { continue; }
+      assert.strictEqual(
+        forbiddenKeyRegex.test(content),
+        false,
+        `Credential or token pattern detected in persisted file: ${p}`
+      );
     }
-  }
+  };
+
+  for (const dir of dirsToScan) walk(dir);
 
   // Check event sanitizer in ExecutorRuntimeGuard
   const tmpDir = mkdtempSync(join(tmpdir(), 'af-inv4-'));
@@ -185,6 +193,31 @@ test('INV-4: No Credential Persistence: scans runtime and tasks for zero secret 
     assert.strictEqual(parsed.secret, undefined, 'Sanitizer must strip secret');
     assert.strictEqual(parsed.reason, 'test_reason', 'Sanitizer preserves safe reason');
     assert.strictEqual(parsed.executor, 'vertex-gemini', 'Sanitizer preserves executor');
+
+    // N10: the filter must be RECURSIVE. A nested credential used to be written
+    // verbatim because only top-level keys were inspected.
+    const nestedDir = mkdtempSync(join(tmpdir(), 'af-inv4-nested-'));
+    try {
+      const nestedLog = join(nestedDir, 'nested.jsonl');
+      const nestedGuard = new ExecutorRuntimeGuard({ eventsLogFile: nestedLog });
+      nestedGuard.appendAuditEvent({
+        executor: 'claude',
+        event: 'NESTED_TEST',
+        reason: { token: 'nested-secret', keep: 'ok' },
+        details: [{ authorization: 'Bearer abcdefghijklmn' }, { ok: true }],
+      });
+
+      const nested = JSON.parse(readFileSync(nestedLog, 'utf8').trim());
+      assert.strictEqual(nested.reason.token, undefined, 'a nested credential key must be stripped');
+      assert.strictEqual(nested.reason.keep, 'ok', 'sanitizing must not drop safe sibling fields');
+      assert.strictEqual(nested.details[0].authorization, undefined, 'credentials inside arrays must be stripped');
+
+      const raw = readFileSync(nestedLog, 'utf8');
+      assert.ok(!raw.includes('nested-secret'), 'the nested secret must not reach disk');
+      assert.ok(!raw.includes('abcdefghijklmn'), 'the nested bearer value must not reach disk');
+    } finally {
+      rmSync(nestedDir, { recursive: true, force: true });
+    }
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }

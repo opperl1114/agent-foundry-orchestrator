@@ -15,5 +15,9 @@
   "vertex-gemini": {
     "max_parallel": 4,
     "min_interval_ms": 200
+  },
+  "cline": {
+    "max_parallel": 1,
+    "min_interval_ms": 2000
   }
 }

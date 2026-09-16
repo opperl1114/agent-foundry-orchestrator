@@ -32,7 +32,7 @@ Agent Foundry Orchestrator 构建了一套**高度自主、具备意图门禁防
 ### 4. 🔄 双模型独立博弈与自愈闭环 (Self-Healing Loop)
 * **创作者与独立审查者**：代码由 **Author** 产出，由物理隔离的 **Reviewer** 进行多维度 Review。
 * **精确会话恢复 (Exact Resume)**：Reviewer 提出 `NEEDS_FIX` 时，系统自动精准接续原 Author 会话上下文修复，全程零人工传话。
-* **确定性验收测试**：测试命令仅来源于静态白名单定义，AI 输出绝对不能随意作为 Shell 执行。
+* **确定性验收测试**：验收命令必须命中静态白名单 `config/acceptance-allowlist.json`，并与任务文件完整性哈希绑定（被改写即 fail-closed）；AI 输出绝对不能随意作为 Shell 执行。
 
 ### 5. ⚡ 企业级断路器与受控恢复 (Runtime Guard & Gated Recovery)
 * **三维状态解耦**：严格分离 **Capability（机制能力）**、**Availability（账号可用性）** 与 **Runtime Safety（并发与熔断）**。
@@ -158,7 +158,7 @@ agent-foundry-orchestrator/
 │   └── asset-classifier.mjs           # 资产敏感度分类器
 ├── contracts/                         # 动作合约 (Action Contract)
 │   ├── action-contract.schema.json    # JSON Schema 动作合约
-│   └── action-types.json              # 允许的动作类型白名单
+│   └── action-types.json              # 动作类型合约（运行期真源：intent/action-validator.mjs 读取）
 ├── planner/                           # 任务规划层 (Planner Layer)
 │   ├── planner.mjs                    # 规划器引擎与 DAG 分批逻辑
 │   └── schema/task-plan.schema.json   # 任务规划 Schema 规范

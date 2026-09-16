@@ -33,13 +33,29 @@ test('WORKTREE-1: isGitRepo and ensureGitRepo initialization', () => {
   const dir = makeTempDir();
   assert.strictEqual(isGitRepo(dir), false, 'Empty dir must not be a git repo');
 
-  ensureGitRepo(dir);
+  // N7: initialising a directory that is not a repository is opt-in, and the
+  // commit identity must not be written into the repository config.
+  assert.throws(
+    () => ensureGitRepo(dir),
+    /NOT_A_GIT_REPO/,
+    'ensureGitRepo must not silently git init a plain directory'
+  );
+  assert.strictEqual(isGitRepo(dir), false, 'a refused call must not have created a repository');
+  assert.strictEqual(existsSync(join(dir, '.git')), false);
+
+  ensureGitRepo(dir, { initIfMissing: true, user: 'Test Runner', email: 'test@example.invalid' });
   assert.strictEqual(isGitRepo(dir), true, 'Initialized dir must be a git repo');
+
+  const repoConfig = readFileSync(join(dir, '.git', 'config'), 'utf8');
+  assert.ok(
+    !repoConfig.includes('Test Runner'),
+    'the commit identity must be passed per command, not written into the repo config'
+  );
 });
 
 test('WORKTREE-2: createWorktree creates branch and worktree directory', () => {
   const repoDir = makeTempDir();
-  ensureGitRepo(repoDir);
+  ensureGitRepo(repoDir, { initIfMissing: true });
   writeFileSync(join(repoDir, 'base.txt'), 'baseline content\n');
   commitWorktree({ worktreeDir: repoDir, message: 'add base' });
 
@@ -57,7 +73,7 @@ test('WORKTREE-2: createWorktree creates branch and worktree directory', () => {
 
 test('WORKTREE-3: Parallel worktree writes and clean merge into main', () => {
   const repoDir = makeTempDir();
-  ensureGitRepo(repoDir);
+  ensureGitRepo(repoDir, { initIfMissing: true });
   writeFileSync(join(repoDir, 'README.md'), '# Main Project\n');
   commitWorktree({ worktreeDir: repoDir, message: 'chore: initial commit' });
 
@@ -94,7 +110,7 @@ test('WORKTREE-3: Parallel worktree writes and clean merge into main', () => {
 
 test('WORKTREE-4: Merge conflict detection fails closed and aborts merge cleanly', () => {
   const repoDir = makeTempDir();
-  ensureGitRepo(repoDir);
+  ensureGitRepo(repoDir, { initIfMissing: true });
   writeFileSync(join(repoDir, 'shared.js'), 'const version = 1;\n');
   commitWorktree({ worktreeDir: repoDir, message: 'chore: initial commit' });
 

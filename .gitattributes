@@ -1,0 +1,16 @@
+# Line endings: the launcher scripts are bash and the JSON/JS are parsed as
+# text, so a Windows checkout must not rewrite them to CRLF (a `#!/bin/bash\r`
+# shebang and a CRLF JSON file both fail in ways that are hard to diagnose).
+# Git's own executable-bit support is what carries the 100755 modes; Windows
+# checkouts additionally need `core.filemode=true` over a WSL mount.
+*.sh text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+
+# No text conversion for anything binary that might be added later.
+*.png binary
+*.jpg binary
+*.gz binary
