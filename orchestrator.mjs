@@ -841,6 +841,28 @@ export async function executeTask(task, adapters = ADAPTERS, { governanceBridge 
     }
   } catch { /* task not persisted yet (programmatic callers, tests) */ }
 
+  // A task loaded FROM DISK must carry its acceptance trust anchor. A missing
+  // binding there means the field was removed, which used to pass verification
+  // and silently unbind the anchor. `__tasksDir` marks exactly the disk-loaded
+  // tasks (the scheduler and continueTask set it); a programmatic in-memory task
+  // was never bound, so it is stamped here instead.
+  if (!task.acceptance_binding) {
+    if (task.__tasksDir !== undefined) {
+      task.state = 'FAILED';
+      task.failure_reason = 'TASK_FILE_TAMPERED';
+      task.error_classification = {
+        category: 'ENVIRONMENT_FAULT',
+        retryable: false,
+        safety_action: 'NONE',
+        reason: 'acceptance trust anchor is missing from the persisted task file',
+      };
+      task.retryable = false;
+      saveTask(task);
+      return task;
+    }
+    task.acceptance_binding = acceptanceBinding(task);
+  }
+
   // tolerate minimally-shaped task objects (tests, programmatic callers)
   task.runs = task.runs ?? [];
   task.revisions_used = task.revisions_used ?? 1;
@@ -1162,6 +1184,7 @@ function loadTaskFile(path) {
     goal: def.goal,
     acceptance: def.acceptance,
     acceptance_cmd: def.acceptance_cmd ?? null,
+    acceptance_timeout_ms: def.acceptance_timeout_ms ?? null,
     allow_legacy_shell_acceptance: def.allow_legacy_shell_acceptance === true,
     candidate: def.candidate ?? null, // governed_write: {title, target, knowledge_class, sources, publish_tags, publish_summary, rationale}
     governance_env: def.governance_env ?? null, // {server_path, vault_root, state_db, reviewer_mcp_config, reviewer_allowed_tools, reviewer_server_name}
@@ -1426,8 +1449,10 @@ async function withTaskLock(taskId, fn) {
 if (isMain) {
   if (cmd === 'run') {
     const { terminateAllActiveRuns } = await import('./lib/adapters.mjs');
+    const { terminateActiveAcceptances } = await import('./lib/acceptance.mjs');
     const onSignal = async (sig) => {
       console.log(`[orchestrator] Received ${sig}, gracefully terminating active executor runs...`);
+      terminateActiveAcceptances({ signal: sig });
       await terminateAllActiveRuns();
       process.exit(130);
     };

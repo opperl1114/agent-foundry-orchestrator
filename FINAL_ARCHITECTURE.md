@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator — Architecture Specification (Full Stack v1.2)
 
 > **当前架构版本：** Production Release v1.2 (Full Capabilities Baseline)  
-> **自动化测试状态：** **188 / 188 PASS (100%)**  
+> **自动化测试状态：** **192 / 192 PASS (100%)**  
 > **设计核心：** 零外部数据库、零常驻守护进程、纯文件系统原子持久化、环境自适应无硬编码路径。
 
 ---
@@ -162,7 +162,7 @@ graph TD
 
 ---
 
-## 8. 自动化测试套件矩阵 (188 Tests All Green)
+## 8. 自动化测试套件矩阵 (192 Tests All Green)
 
 | 测试模块 | 用例数 | 覆盖核心保障 |
 | :--- | :---: | :--- |
@@ -190,9 +190,9 @@ graph TD
 | `tests/recovery.test.mjs` | 13 | 断点接续精准度、死锁安全回收、幂等恢复 |
 | `tests/conversation-gateway.test.mjs` | 6 | MCP Gateway 接口接入与任务派发（自带夹具） |
 | `tests/executor-error-classifier.test.mjs` | 7 | stdout/stderr 403 与 TOS 一律 fail-closed、测试日志 403 不误报 |
-| `tests/acceptance-allowlist.test.mjs` | 6 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
+| `tests/acceptance-allowlist.test.mjs` | 10 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
 | `tests/runtime-guard-state.test.mjs` | 4 | 熔断状态原子写、损坏 fail-closed、纯读查询、冷却投影 |
 | `tests/cli-smoke.test.mjs` | 5 | CLI 入口真实执行：优雅报错、无裸栈、运维子命令可用 |
 | `tests/runtime-guard-policy.test.mjs` | 4 | 策略深合并、ISO 冷却归一、护栏拦截分类、recovery_probe 穿透 |
 | `tests/registry-fail-closed.test.mjs` | 3 | 真源缺失时路由与调度器 fail-closed、出厂代码零作者机路径 |
-| **总计** | **188** | **100% PASS** |
+| **总计** | **192** | **100% PASS** |

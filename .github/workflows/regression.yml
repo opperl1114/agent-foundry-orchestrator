@@ -22,7 +22,9 @@ jobs:
       # The suite must be green on a CLEAN checkout: no sibling repositories, no
       # provider CLIs, no pre-existing runtime state.
       - name: full test suite
-        run: npm test
+        run: |
+          set -o pipefail          # a failing suite must fail this step through the pipe
+          npm test 2>&1 | tee /tmp/af-test-output.txt
 
       # A clean clone used to materialize bin/* and every .sh as non-executable,
       # which broke every launcher spawn on a fresh machine.
@@ -67,6 +69,19 @@ jobs:
           tracked=$(git ls-files runtime/ | grep -v -E '\.gitkeep$' || true)
           if [ -n "$tracked" ]; then
             echo "::error::runtime state must not be tracked:"; echo "$tracked"; exit 1
+          fi
+
+      # The documented test count has drifted three times (91 -> 146 -> 182 ->
+      # 188). It is checked against the run that just happened instead of being
+      # maintained by hand.
+      - name: documented test count matches the suite
+        run: |
+          actual=$(grep -aE '^. tests [0-9]+' /tmp/af-test-output.txt | grep -oE '[0-9]+' | head -1)
+          documented=$(grep -oE '[0-9]+ / [0-9]+ PASS' README.md | head -1 | cut -d' ' -f1)
+          echo "actual=$actual documented=$documented"
+          if [ -z "$actual" ] || [ "$actual" != "$documented" ]; then
+            echo "::error::README claims $documented tests, the suite ran $actual"
+            exit 1
           fi
 
       # The fixtures create temporary sandboxes; a test file that creates one and

@@ -26,6 +26,7 @@ import './helpers/runtime-state-fixture.mjs';
 import { RUNS_DIR } from '../lib/config.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { classifyExecutionError } from '../lib/executor-error-classifier.mjs';
+import { acceptanceBinding } from '../lib/acceptance.mjs';
 import { saveTaskAtomic, readTaskFile } from '../lib/store.mjs';
 import { recoverTask, scanRecovery } from '../lib/recovery.mjs';
 import { acquireTaskLock, releaseTaskLock, readLock, LockHeldError } from '../lib/tasklock.mjs';
@@ -158,6 +159,9 @@ test('TEST PROD-1: executor crash -> task recover', async () => {
         session_ref: 'SESS-AUTHOR-CRASH-SAFE',
       }],
     };
+    // Crash-state fixtures carry the acceptance trust anchor, as a real task at
+    // that point would (see H2: an absent anchor is now refused).
+    taskDef.acceptance_binding = taskDef.acceptance_binding ?? acceptanceBinding(taskDef);
     saveTaskAtomic(join(workDir, `${taskId}.json`), taskDef);
 
     // 独立审查器 fake
@@ -192,6 +196,7 @@ test('TEST PROD-1: executor crash -> task recover', async () => {
       last_author_content: null,
       runs: [],
     };
+    midflightDef.acceptance_binding = midflightDef.acceptance_binding ?? acceptanceBinding(midflightDef);
     saveTaskAtomic(join(workDir, `${crashMidflightId}.json`), midflightDef);
 
     const midflightRecovery = await recoverTask(crashMidflightId, {
