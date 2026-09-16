@@ -9,6 +9,7 @@
 //   TEST CG-6: 未知参数不会污染 Task Schema
 
 import { test } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, existsSync, readdirSync } from 'node:fs';

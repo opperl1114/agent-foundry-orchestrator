@@ -12,6 +12,7 @@
 //   TEST HI-9: Intent Gate 不修改 Governance (Single Governance & boundary validation)
 
 import { test } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';

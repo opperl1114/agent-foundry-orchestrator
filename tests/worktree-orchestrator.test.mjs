@@ -1,5 +1,6 @@
 // tests/worktree-orchestrator.test.mjs - End-to-end test for DAG plans with Git Worktree parallel execution
 import { test, afterEach } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';

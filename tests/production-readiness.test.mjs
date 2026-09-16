@@ -7,6 +7,7 @@
 // TEST PROD-5: two orchestrator instances -> lock isolation
 
 import { test } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import {
   mkdtempSync,

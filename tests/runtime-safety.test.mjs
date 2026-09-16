@@ -9,6 +9,7 @@
 //   Runtime-F: Burst launch protection: 10 concurrent requests serialize with peak active process <= 1
 
 import { test } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -3,6 +3,7 @@
 // C2: cancel A while B runs -> A CANCELLED, B COMPLETED (isolation)
 // C3: cancel with no active process (already exited) -> CANCELLED, no error
 import { test } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

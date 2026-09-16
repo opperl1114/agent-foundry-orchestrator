@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // vertex-gemini-af - Google Cloud Vertex AI Enterprise Executor Launcher
 //
-// Single Source of Truth: /mnt/c/Users/relaret/agent-foundry-global/AGENTS.md
+// Single Source of Truth: $AF_GLOBAL_DIR/AGENTS.md (agent-foundry-global)
 // Invariants:
 //   1. Verify canonical AGENTS.md readable before execution
 //   2. Compute governance SHA256 dynamically

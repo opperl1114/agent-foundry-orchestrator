@@ -1,8 +1,7 @@
 #!/bin/bash
 # cline-af - Cline CLI adapter for Agent Foundry Global Governance
 #
-# Single Source of Truth: /mnt/c/Users/relaret/agent-foundry-global/AGENTS.md
-# Load mechanism: native -s / --system flag
+# Single Source of Truth: $AF_GLOBAL_DIR/AGENTS.md (agent-foundry-global)
 #
 # Responsibilities:
 #   1. verify canonical exists and is readable
@@ -13,11 +12,13 @@
 
 set -u
 
-CLINE_BIN="${CLINE_BIN:-$(command -v cline 2>/dev/null || echo "$HOME/.nvm/versions/node/v24.20.0/bin/cline")}"
+CLINE_BIN="${CLINE_BIN:-$(command -v cline 2>/dev/null || true)}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GOV_DIR="${AF_GLOBAL_DIR:-$(cd "$SCRIPT_DIR/../../agent-foundry-global" 2>/dev/null && pwd || echo "/mnt/c/Users/relaret/agent-foundry-global")}"
-CANONICAL="${AF_CANONICAL_AGENTS_MD:-$GOV_DIR/AGENTS.md}"
-VAULT_ROOT_VALUE="${VAULT_ROOT:-$(cd "$SCRIPT_DIR/../../agent-foundry-vault" 2>/dev/null && pwd || echo "/mnt/c/Users/relaret/agent-foundry-vault")}"
+# No author-machine fallback: an unresolvable governance root must fail closed
+# below, not silently point at a path that only exists on someone else's host.
+GOV_DIR="${AF_GLOBAL_DIR:-$(cd "$SCRIPT_DIR/../../agent-foundry-global" 2>/dev/null && pwd || true)}"
+CANONICAL="${AF_CANONICAL_AGENTS_MD:-${GOV_DIR:+$GOV_DIR/AGENTS.md}}"
+VAULT_ROOT_VALUE="${VAULT_ROOT:-$(cd "$SCRIPT_DIR/../../agent-foundry-vault" 2>/dev/null && pwd || true)}"
 
 if [ ! -x "$CLINE_BIN" ]; then
     CLINE_BIN=$(command -v cline 2>/dev/null || true)

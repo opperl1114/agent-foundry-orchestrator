@@ -4,6 +4,7 @@
 // contact (real_vault_zero_touch). Fake bridges are hermetic fixtures for the
 // Governance Plane; fail-closed governance_env rules are untouched.
 import { test, after } from 'node:test';
+import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
