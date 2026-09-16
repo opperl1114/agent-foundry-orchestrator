@@ -82,7 +82,29 @@ never passed: `grep -rn '/mnt/c/Users/relaret\|/home/relaret' lib/ bin/ config/`
 returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
 `EXECUTOR_REGISTRY_MISSING` refusal instead of a silently green suite.
 
-Remaining batch from the same review (B3 minors and hygiene) is still open.
+**B3 — minors and engineering hygiene**
+
+| Commit | Change |
+| :--- | :--- |
+| `74ef9c9` | N1–N13 and E1–E5. Correctness: the cancel CLI path referenced an undeclared `now`; `settleIfPublished` cleared a published flag on ANY error (including a misconfigured bridge) instead of only on a vault rejection; `execAsync` wrapped an async executor in `new Promise`, so a throw after the first await left the promise forever pending; 'error'+'close' double-recorded breaker evidence; codex/cline `health()` could never report `ok: false`; the codex planner could die on an unhandled EPIPE; `ensureGitRepo` silently `git init`-ed any directory and rewrote its commit identity; the shipped task template could not run at all and the acceptance command was only validated after the expensive stages; a failed lease renewal was swallowed, leaving a run executing without its lock. Hardening: the credential scan is recursive with a broader pattern and the audit sanitizer now strips nested credential keys; PROD-2 exercises the real classifier instead of asserting its own baked-in literal; `saveTaskAtomic` fsyncs the file and the directory. Hygiene: `.gitattributes`, `package.json` (`npm test`), a CI regression gate, the duplicate safety-policy file removed (single source) with an explicit cline policy, and `contracts/action-types.json` is now genuinely the runtime source the validator reads. |
+
+**Verified after B3** (clean clone, Node v24, via `npm test`):
+
+```text
+ℹ tests 181
+ℹ pass 181
+ℹ fail 0
+ℹ skipped 0
+```
+
+The plan's §5 checklist passes end to end on the clean clone, including the two
+items that had never passed: `grep -rn '/mnt/c/Users/relaret\|/home/relaret' lib/
+bin/ config/` returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
+`EXECUTOR_REGISTRY_MISSING` refusal instead of a silently green suite.
+
+Not verified locally: the CI workflow itself (`.github/workflows/regression.yml`)
+has no runner here. Its steps are the same commands that were run by hand above;
+it is the one artefact in this batch that has not been executed end to end.
 
 ---
 
