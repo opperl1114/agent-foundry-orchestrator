@@ -16,6 +16,11 @@ import {
   rotateLogs,
   formatLogRotationResult,
 } from './lib/executor-ops.mjs';
+import {
+  listAcceptanceHandles,
+  reapOrphanedAcceptances,
+  formatAcceptanceReapResult,
+} from './lib/acceptance.mjs';
 
 const args = process.argv.slice(2);
 const mainCmd = args[0];
@@ -37,6 +42,8 @@ function printUsage() {
   af-admin circuit list
   af-admin circuit reset <executor> --reason "<reason>" [--reset-by "<name>"]
   af-admin tasks prune [--confirm] [--tasks-dir <path>]
+  af-admin acceptance list
+  af-admin acceptance reap [--confirm]
   af-admin logs rotate [--days <N>] [--events-file <path>] [--archive-dir <path>]`);
 }
 
@@ -178,6 +185,32 @@ async function main() {
       printUsage();
       process.exit(1);
     }
+  } else if (mainCmd === 'acceptance') {
+    if (subCmd === 'list') {
+      const handles = listAcceptanceHandles();
+      if (handles.length === 0) {
+        console.log('no live acceptance children');
+        process.exit(0);
+      }
+      for (const h of handles) {
+        console.log(`  ${h.run_id}  pid=${h.pid}  alive=${h.pid_alive}  parent=${h.parent_pid ?? '-'}  orphaned=${h.orphaned}  task=${h.task_id ?? '-'}`);
+      }
+      process.exit(0);
+    }
+    if (subCmd === 'reap') {
+      const confirm = args.includes('--confirm');
+      try {
+        const res = await reapOrphanedAcceptances({ confirm });
+        console.log(formatAcceptanceReapResult(res));
+        process.exit(0);
+      } catch (err) {
+        console.error(`error: ${err.message}`);
+        process.exit(1);
+      }
+    }
+    console.error(`unknown acceptance subcommand: ${subCmd} (expected: list | reap)`);
+    printUsage();
+    process.exit(1);
   } else if (mainCmd === 'logs') {
     if (subCmd === 'rotate') {
       const daysArg = argValue('--days');

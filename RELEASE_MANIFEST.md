@@ -71,8 +71,8 @@ auto_publish+published:false -> unknown                             (was publish
 **Verified after B2** (clean clone, Node v24):
 
 ```text
-ℹ tests 192
-ℹ pass 192
+ℹ tests 195
+ℹ pass 195
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -91,8 +91,8 @@ returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
 **Verified after B3** (clean clone, Node v24, via `npm test`):
 
 ```text
-ℹ tests 192
-ℹ pass 192
+ℹ tests 195
+ℹ pass 195
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -126,8 +126,8 @@ verifying it turned up)
 **Follow-up verification** (fresh clone, `npm test`):
 
 ```text
-ℹ tests 192
-ℹ pass 192
+ℹ tests 195
+ℹ pass 195
 ℹ fail 0
 ℹ skipped 0
 ```

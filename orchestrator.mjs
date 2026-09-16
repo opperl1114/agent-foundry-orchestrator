@@ -27,6 +27,8 @@ import { selectExecutor, ADAPTERS } from './lib/adapters.mjs';
 import { classifyExecutionError } from './lib/executor-error-classifier.mjs';
 import { readTaskFile, taskFileExists, saveTaskWithVersion } from './lib/store.mjs';
 import { runAcceptance, normalizeAcceptanceCmd, acceptanceBinding } from './lib/acceptance.mjs';
+import { RUNTIME_EVENTS_LOG } from './lib/config.mjs';
+import { appendFileSync } from 'node:fs';
 import { GovernanceBridge, classifyPublishVerdict } from './lib/governance.mjs';
 import { bindReviewResult, latestAuthorRun } from './lib/reviews.mjs';
 import { readLock, isLockStale } from './lib/tasklock.mjs';
@@ -335,6 +337,14 @@ function authorContentSha(task) {
   return createHash('sha256').update(content).digest('hex');
 }
 
+// Runtime audit trail is best effort by design: failing to write an audit line
+// must never turn into a task failure.
+function appendRuntimeAuditEvent(event) {
+  try {
+    appendFileSync(RUNTIME_EVENTS_LOG, `${JSON.stringify({ ...event, timestamp: new Date().toISOString() })}\n`, 'utf8');
+  } catch { /* audit is advisory */ }
+}
+
 async function acceptanceGate(task, revision) {
   const prev = latestAuthoritativeAcceptance(task);
   const currentSha = authorContentSha(task);
@@ -353,6 +363,22 @@ async function acceptanceGate(task, revision) {
     acc.record.content_sha256 = currentSha;
     task.acceptance_runs = task.acceptance_runs ?? [];
     task.acceptance_runs.push(acc.record);
+  }
+  // A task with no acceptance_cmd has no deterministic gate at all: the gate
+  // returns ok without running anything, and the only check left is the
+  // reviewer's PASS. That is legitimate (a task submitted from one line of user
+  // input has no command to run) but it must be a visible fact, not something an
+  // operator has to infer from an empty acceptance_runs array.
+  if (!acc.record) {
+    task.acceptance_status = 'not_configured';
+    appendRuntimeAuditEvent({
+      event: 'acceptance_not_configured',
+      task_id: task.task_id,
+      revision,
+      note: 'no acceptance_cmd: the deterministic gate was skipped, only the reviewer verdict applies',
+    });
+  } else {
+    task.acceptance_status = acc.ok ? 'passed' : 'failed';
   }
   return acc;
 }
@@ -1615,6 +1641,12 @@ if (isMain) {
           if (!f.endsWith('.json')) continue;
           try {
             const h = JSON.parse(readFileSync(join(RUNS_HANDLE_DIR, f), 'utf8'));
+            // Acceptance children are deliberately NOT cancelled here: killing one
+            // would look like a failed acceptance command to the owning process
+            // and could send the task into its fix loop. They are bounded by
+            // acceptance_timeout_ms, reclaimed in-process on SIGTERM, and
+            // reaped when orphaned (af-admin acceptance reap).
+            if (h.kind === 'acceptance') continue;
             if (h.task_id === tid) handles.push(h);
           } catch { /* corrupt handle */ }
         }

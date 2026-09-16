@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator — Architecture Specification (Full Stack v1.2)
 
 > **当前架构版本：** Production Release v1.2 (Full Capabilities Baseline)  
-> **自动化测试状态：** **192 / 192 PASS (100%)**  
+> **自动化测试状态：** **195 / 195 PASS (100%)**  
 > **设计核心：** 零外部数据库、零常驻守护进程、纯文件系统原子持久化、环境自适应无硬编码路径。
 
 ---
@@ -111,7 +111,9 @@ graph TD
 
 ### 4.2 任务双模型博弈循环 (`orchestrator.mjs` + `lib/scheduler.mjs`)
 - **Author -> Reviewer -> Acceptance**：创作者产出代码，由独立 Reviewer 审核；若为 `NEEDS_FIX`，通过精确会话恢复（Exact Resume）接续原 Author 会话修改。
-- **确定性白名单验收**：测试命令仅来源于任务定义静态声明，执行前经过严格校验，严禁执行大模型输出的任意未知 Shell 命令。
+- **确定性白名单验收**：测试命令仅来源于任务定义静态声明，执行前经过严格校验，严禁执行大模型输出的任意未知 Shell 命令。命令按**完整路径精确匹配**白名单条目（不再按 basename，避免同名文件蒙混），旧式 Shell 字符串通道已关闭。
+- **缺省验收命令的语义（不粉饰）**：任务未声明 `acceptance_cmd` 时**不存在确定性门禁**，验收阶段直接通过，唯一的门是独立 reviewer 的 PASS；该事实以 `acceptance_status: "not_configured"` 与运行时审计事件 `acceptance_not_configured` 显式记录。
+- **验收子进程的生命周期**：受 `acceptance_timeout_ms`（默认 10 分钟，超时后 SIGTERM → 宽限 → SIGKILL，记为 `failure_reason: "timeout"` 的工作流数据）约束；优雅停机在进程内回收；SIGKILL 属主留下的孤儿进程可通过持久句柄由 `af-admin acceptance reap` 回收（前提：属主已死 且 cmdline 与记录一致）。
 - **重试上限保护**：单任务设置有限重试次数（`max_revisions`，默认 3 次），消耗殆尽转为 `FAILED`。
 
 ### 4.3 容灾接续与幂等恢复 (`lib/recovery.mjs`)
@@ -162,7 +164,7 @@ graph TD
 
 ---
 
-## 8. 自动化测试套件矩阵 (192 Tests All Green)
+## 8. 自动化测试套件矩阵 (195 Tests All Green)
 
 | 测试模块 | 用例数 | 覆盖核心保障 |
 | :--- | :---: | :--- |
@@ -190,9 +192,9 @@ graph TD
 | `tests/recovery.test.mjs` | 13 | 断点接续精准度、死锁安全回收、幂等恢复 |
 | `tests/conversation-gateway.test.mjs` | 6 | MCP Gateway 接口接入与任务派发（自带夹具） |
 | `tests/executor-error-classifier.test.mjs` | 7 | stdout/stderr 403 与 TOS 一律 fail-closed、测试日志 403 不误报 |
-| `tests/acceptance-allowlist.test.mjs` | 10 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
+| `tests/acceptance-allowlist.test.mjs` | 13 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
 | `tests/runtime-guard-state.test.mjs` | 4 | 熔断状态原子写、损坏 fail-closed、纯读查询、冷却投影 |
 | `tests/cli-smoke.test.mjs` | 5 | CLI 入口真实执行：优雅报错、无裸栈、运维子命令可用 |
 | `tests/runtime-guard-policy.test.mjs` | 4 | 策略深合并、ISO 冷却归一、护栏拦截分类、recovery_probe 穿透 |
 | `tests/registry-fail-closed.test.mjs` | 3 | 真源缺失时路由与调度器 fail-closed、出厂代码零作者机路径 |
-| **总计** | **192** | **100% PASS** |
+| **总计** | **195** | **100% PASS** |
