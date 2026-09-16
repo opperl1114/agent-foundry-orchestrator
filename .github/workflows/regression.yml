@@ -32,9 +32,10 @@ jobs:
         run: |
           mode_count=$(git ls-files -s | grep -c '^100755' || true)
           echo "100755 entries: $mode_count"
-          test "$mode_count" -ge 9
+          test "$mode_count" -ge 10
           test -x bin/cline-af
           test -x bin/vertex-gemini-af
+          test -x bin/zcode-af
           test -x af-admin.mjs
 
       # README/ARCHITECTURE promise "no hardcoded host paths".

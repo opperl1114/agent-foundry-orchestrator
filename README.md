@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator
 
 > **企业级多智能体协同调度与控制核心 (Multi-Agent Task Orchestrator & Control Plane)**  
-> 当前版本：`Production Release v1.2 (Full Capabilities)` ｜ 自动化测试状态：**195 / 195 PASS (100%)（干净克隆验证）**
+> 当前版本：`Production Release v1.2 (Full Capabilities)` ｜ 自动化测试状态：**200 / 200 PASS (100%)（干净克隆验证）**
 
 ---
 
@@ -201,7 +201,7 @@ agent-foundry-orchestrator/
 node --test
 ```
 
-**测试矩阵全绿通过 (195 / 195 PASS, 100%) （干净克隆 `git clone . && node --test`）**：
+**测试矩阵全绿通过 (200 / 200 PASS, 100%) （干净克隆 `git clone . && node --test`）**：
 * 🌲 **Git Worktree 并发与合并冲突**：多分支隔离并行写入、冲突检测安全 Fail-Closed；
 * 🧭 **Planner 规划层契约**：DAG 分批有效性、规划器与执行器职责隔离边界；
 * 🛡️ **Human Intent Gate 意图门禁**：高危写操作拦截、删除阻断、人工通过接续；
