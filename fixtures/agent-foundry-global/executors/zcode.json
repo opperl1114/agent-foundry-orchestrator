@@ -1,0 +1,44 @@
+{
+  "executor_id": "zcode",
+  "executor_type": "zcode-cli",
+  "version_audited": "0.16.5",
+  "platform": "wsl2",
+  "binary": "node /mnt/e/Zcode/resources/glm/zcode.cjs",
+  "launcher": "bin/zcode-af",
+  "launcher_note": "zcode-af wraps zcode.cjs with headless prompt and JSON streaming",
+  "governance": {
+    "mechanism": "canonical AGENTS.md injection",
+    "sync": "reads canonical directly",
+    "verified_loaded": true
+  },
+  "invocation": {
+    "non_interactive": "zcode-af --mode yolo --prompt \"<prompt>\" --json",
+    "json_output": "--json",
+    "structured_output": "JSON output with session_id and result",
+    "resume": "zcode-af --resume <session-id> --mode yolo --prompt \"<prompt>\" --json",
+    "session_id": "sessionId from json output",
+    "mcp_attach": "native ~/.zcode/cli/config.json"
+  },
+  "mcp": {
+    "agent-foundry-vault": "configured in ~/.zcode/cli/config.json",
+    "status": "PASS",
+    "preauthorization": "native"
+  },
+  "permissions": {
+    "mechanism": "--mode yolo",
+    "unattended_execution": "PASS"
+  },
+  "capabilities_audit": {
+    "governance": "PASS",
+    "non_interactive": "PASS",
+    "structured_output": "PASS",
+    "exit_code": "PASS",
+    "resume": "PASS",
+    "mcp_unattended": "PASS",
+    "no_tty_blocker": "PASS"
+  },
+  "blockers": [],
+  "warnings": [],
+  "automation_ready": "READY",
+  "rollback": "rm bin/zcode-af fixtures/agent-foundry-global/executors/zcode.json"
+}
