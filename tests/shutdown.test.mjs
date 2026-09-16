@@ -263,6 +263,7 @@ test('TEST SH-3: 被中断任务重启后 -> recovery scan 正确识别（非静
       ...wsTask(taskRevId, workDir),
       state: 'REVIEW_RUNNING',
       last_author_content: '# Generated durable content\n',
+      author_content_revision: 1,
       runs: [{
         executor_run_id: 'RUN-AUTHOR-DONE',
         executor_type: 'claude',

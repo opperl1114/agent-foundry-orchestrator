@@ -19,13 +19,13 @@
 //   node orchestrator.mjs cancel --task-id TASK-001
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { selectExecutor, ADAPTERS } from './lib/adapters.mjs';
 import { classifyExecutionError } from './lib/executor-error-classifier.mjs';
-import { saveTaskAtomic, readTaskFile, taskFileExists } from './lib/store.mjs';
+import { readTaskFile, taskFileExists, saveTaskWithVersion } from './lib/store.mjs';
 import { runAcceptance, normalizeAcceptanceCmd, acceptanceBinding } from './lib/acceptance.mjs';
 import { GovernanceBridge, classifyPublishVerdict } from './lib/governance.mjs';
 import { bindReviewResult, latestAuthorRun } from './lib/reviews.mjs';
@@ -45,7 +45,7 @@ const TASKS_DIR = join(ROOT, 'tasks');
 const LOCKS_DIR = join(ROOT, 'locks');
 const MAX_REVISIONS_DEFAULT = 3;
 
-const RUNNING_STATES = new Set(['AUTHOR_RUNNING', 'REVIEW_RUNNING']);
+const RUNNING_STATES = new Set(['AUTHOR_RUNNING', 'FIX_RUNNING', 'REVIEW_RUNNING']);
 
 function taskPath(taskId) {
   return join(TASKS_DIR, `${taskId}.json`);
@@ -60,9 +60,8 @@ function tasksDirOf(task) {
 
 function saveTask(task) {
   // Phase 1.1: atomic write + monotonic state_version for update ordering.
-  task.state_version = (task.state_version ?? 0) + 1;
-  task.updated_at = new Date().toISOString();
-  saveTaskAtomic(join(tasksDirOf(task), `${task.task_id}.json`), task);
+  // Delegates to the single version-incrementing writer in lib/store.mjs.
+  saveTaskWithVersion(tasksDirOf(task), task);
 }
 
 function loadTask(taskId, tasksDir = TASKS_DIR) {
@@ -261,6 +260,11 @@ async function runAuthor(task, revision, adapters, opts = {}) {
     throw err;
   }
   task.last_author_content = result.structured_result?.result ?? null;
+  // Record WHICH revision produced the staged content. Without it a crash
+  // during a fix left the previous revision's content looking like a durable
+  // result for the new revision, so recovery skipped the fix and reviewed stale
+  // content.
+  task.author_content_revision = revision;
   if (purpose === 'author') {
     task.author_session_ref = result.session_ref;
     task.author_session_executor_type = adapter.type;
@@ -319,11 +323,21 @@ async function runReview(task, revision, adapters, opts = {}) {
 
 // Executes the task-defined acceptance command (trusted source only - see
 // lib/acceptance.mjs). Agent output is never consulted for commands.
-// PHASE 4: an authoritative acceptance result for THIS revision is reused on
-// recovery instead of re-executing the command (idempotent recovery).
+// An acceptance result is reused on recovery only for the EXACT author content
+// it validated (content-addressed reuse). Comparing the revision alone was not
+// enough: a bounded retry or an executor fallback re-runs the author WITHOUT
+// bumping the revision, so a stale record could mark fresh content as verified.
+// Records written before this binding existed carry no content_sha256 and are
+// therefore never reused (conservative migration for historical tasks).
+function authorContentSha(task) {
+  const content = typeof task.last_author_content === 'string' ? task.last_author_content : '';
+  return createHash('sha256').update(content).digest('hex');
+}
+
 async function acceptanceGate(task, revision) {
   const prev = latestAuthoritativeAcceptance(task);
-  if (prev && Number(prev.revision ?? -1) === Number(revision)) {
+  const currentSha = authorContentSha(task);
+  if (prev && prev.content_sha256 && prev.content_sha256 === currentSha) {
     return {
       ok: prev.exit_code === 0,
       output: prev.stdout_summary,
@@ -334,6 +348,8 @@ async function acceptanceGate(task, revision) {
   const acc = await runAcceptance(task);
   if (acc.record) {
     acc.record.revision = revision;
+    acc.record.author_run_id = latestAuthorRun(task)?.executor_run_id ?? null;
+    acc.record.content_sha256 = currentSha;
     task.acceptance_runs = task.acceptance_runs ?? [];
     task.acceptance_runs.push(acc.record);
   }
@@ -773,6 +789,13 @@ async function executePlannedSteps(task, adapters, { governanceBridge = null, ta
         }
         saveTask(task);
       } finally {
+        // A failed step must not leave its siblings running while the worktrees
+        // they are writing into are torn down. Terminate every active run of
+        // this task first, then clean up.
+        try {
+          const { cancelTaskRuns } = await import('./lib/adapters.mjs');
+          await cancelTaskRuns(task.task_id);
+        } catch { /* best effort: cleanup must still happen */ }
         session.cleanupAll();
       }
     }
@@ -969,7 +992,10 @@ async function runLoopFromReview(task, revision, adapters, { governanceBridge = 
       task.revisions_used = revision;
       task.state = 'NEEDS_FIX';
       saveTask(task);
-      task.state = 'AUTHOR_RUNNING';
+      // A distinct state: the fix resumes the ORIGINAL author session with the
+      // persisted feedback, so a crash here is safe to re-run. A crash during
+      // an AUTHOR_RUNNING run has an UNKNOWN outcome and must not be.
+      task.state = 'FIX_RUNNING';
       saveTask(task);
       await runAuthor(task, revision, adapters, { onRunStart }); // resume original author session
       if (task.task_mode === 'governed_write') stageSubmission(task);
@@ -1057,15 +1083,17 @@ export async function continueTask(taskId, adapters = ADAPTERS, { governanceBrid
     }
   }
 
-  if (task.state === 'AUTHOR_RUNNING' && !authorResultPersisted(task)) {
+  if (task.state === 'AUTHOR_RUNNING' && !authorResultPersisted(task, task.revisions_used ?? 1)) {
     // the author run died mid-flight: record the interrupted run explicitly
     // (UNKNOWN_OUTCOME) - never a fake FAILED/PASS - and refuse auto-continuation
     markInterruptedRun(task, 'author');
     throw Object.assign(new Error('INTERRUPTED: author run has no durable result (UNKNOWN_OUTCOME) - manual decision required (re-run author from scratch or discard)'), { code: 'AUTHOR_INTERRUPTED' });
   }
 
-  if (task.state === 'NEEDS_FIX') {
-    // durable review feedback + original author session -> exact resume fix
+  if (task.state === 'NEEDS_FIX' || task.state === 'FIX_RUNNING') {
+    // durable review feedback + original author session -> exact resume fix.
+    // FIX_RUNNING means the fix was interrupted before producing anything, which
+    // is safe to re-run; NEEDS_FIX means the fix has not started either.
     task.state = 'AUTHOR_RUNNING';
     saveTask(task);
     const revision = task.revisions_used ?? 1;
@@ -1365,6 +1393,30 @@ function argValue(flag) {
   return i >= 0 ? rest[i + 1] : null;
 }
 
+// The CLI is a Control Plane owner in its own right: `run` and `resume` used to
+// execute a task with no lock at all, so two operators could drive the same task
+// concurrently. The lock is taken here (not inside the library entry points,
+// which recovery already calls while holding one) and released in a finally, so
+// a refusal leaves no lock behind.
+async function withTaskLock(taskId, fn) {
+  const { acquireTaskLock, releaseTaskLock } = await import('./lib/tasklock.mjs');
+  let lockInfo;
+  try {
+    lockInfo = acquireTaskLock(LOCKS_DIR, taskId, { orchestratorInstanceId: `af-cli-${process.pid}` });
+  } catch (err) {
+    console.error(`[orchestrator] ${err.message}`);
+    process.exit(3);
+  }
+  if (lockInfo.stale_lock_recovered) {
+    console.log(`[orchestrator] recovered a stale lock for ${taskId} (${lockInfo.recovered_from?.stale_reason ?? 'unknown'})`);
+  }
+  try {
+    return await fn();
+  } finally {
+    releaseTaskLock(LOCKS_DIR, taskId, lockInfo.lock);
+  }
+}
+
 if (isMain) {
   if (cmd === 'run') {
     const { terminateAllActiveRuns } = await import('./lib/adapters.mjs');
@@ -1378,7 +1430,7 @@ if (isMain) {
 
     const task = loadTaskFile(argValue('--task-file'));
     console.log(`[orchestrator] task=${task.task_id} author=${task.author_executor} reviewer=${task.reviewer_executor} max_revisions=${task.max_revisions}`);
-    const done = await executeTask(task);
+    const done = await withTaskLock(task.task_id, () => executeTask(task));
     console.log(`[orchestrator] final state: ${done.state}${done.failure_reason ? ` (${done.failure_reason})` : ''}`);
     console.log(JSON.stringify({
       task_id: done.task_id,
@@ -1469,7 +1521,8 @@ if (isMain) {
     // Phase 2: re-query the Governance Plane for a WAITING_HUMAN task. The
     // Human Gate itself stays in vault-mcp / local-human-cli - the user does
     // the real gate, then this re-reads the truth. Never trusts local mirror.
-    const done = await resumeGovernance(argValue('--task-id'));
+    const resumeTaskId = argValue('--task-id');
+    const done = await withTaskLock(resumeTaskId, () => resumeGovernance(resumeTaskId));
     console.log(`[orchestrator] resume result: ${done.state}${done.failure_reason ? ` (${done.failure_reason})` : ''}`);
     console.log(JSON.stringify({
       task_id: done.task_id,

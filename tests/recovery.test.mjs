@@ -162,6 +162,7 @@ test('TEST A: author persisted, review never ran -> recover runs ONLY the review
     runs: [authorRun('RUN-A1', 'SESS-A')],
     author_session_ref: 'SESS-A', author_session_executor_type: 'claude',
     last_author_content: 'final page content',
+    author_content_revision: 1,
   }));
   const done = await recover(id, { bridge, adapters: { claude: reviewer, antigravity: realAdapters().antigravity, codex: realAdapters().codex } });
   assert.strictEqual(done.outcome, 'RECOVERED');
@@ -248,6 +249,7 @@ test('TEST E: review PASS persisted, acceptance never ran -> recover re-executes
   const id = `TASK-P4E-${++n}`;
   writeTaskFile(baseTask(id, 'REVIEW_RUNNING', {
     last_author_content: 'final page content',
+    author_content_revision: 1,
     runs: [authorRun('RUN-E1', 'SESS-E'), reviewRun('RUN-E2', 'REV-E')],
     author_session_ref: 'SESS-E', author_session_executor_type: 'claude',
     last_review: { ...PASS, task_id: id, revision: 1, reviewed_executor_run_id: 'RUN-E2' },
@@ -260,6 +262,63 @@ test('TEST E: review PASS persisted, acceptance never ran -> recover re-executes
   assert.strictEqual(done.task.acceptance_runs[0].exit_code, 0);
   // reviewer was NOT re-called (decision reused from durable state)
   assert.strictEqual(reviewer.calls.filter((c) => c.kind === 'run').length, 0);
+});
+
+test('TEST M2: fix 中断后不复用上一轮内容，而是继续走 fix', async () => {
+  const { classifyRecovery } = await import('../lib/recovery.mjs');
+  const id = `TASK-M2-${++n}`;
+  // The revision-2 fix was interrupted; the staged content still belongs to
+  // revision 1. Recovery must not accept it as revision 2's result - doing so
+  // skipped the fix and went on to review stale content.
+  writeTaskFile(baseTask(id, 'FIX_RUNNING', {
+    revisions_used: 2,
+    runs: [authorRun('RUN-M2-A1', 'SESS-M2'), reviewRun('RUN-M2-R1', 'REV-M2')],
+    author_session_ref: 'SESS-M2', author_session_executor_type: 'claude',
+    last_author_content: 'STALE revision-1 content',
+    author_content_revision: 1,
+    last_review: { ...NEEDS_FIX, task_id: id, revision: 1, reviewed_executor_run_id: 'RUN-M2-R1' },
+    review_revision: 1,
+  }));
+
+  const classification = classifyRecovery(JSON.parse(readFileSync(join(WORK, `${id}.json`), 'utf8')));
+  assert.strictEqual(classification.recovery_class, 'RESUMABLE', classification.reason ?? '');
+
+  const claude = makeFake('claude', {
+    author: [{ text: 'fixed revision-2 content' }],
+    reviewer: [{ review: PASS }],
+  });
+  await recover(id, { adapters: { claude, antigravity: realAdapters().antigravity, codex: realAdapters().codex } });
+
+  const resumeCall = claude.calls.find((c) => c.kind === 'resume' && c.role === 'author');
+  assert.ok(resumeCall, 'the interrupted fix must be resumed rather than skipped in favour of stale content');
+  assert.strictEqual(resumeCall.sessionRef, 'SESS-M2');
+
+  const recovered = JSON.parse(readFileSync(join(WORK, `${id}.json`), 'utf8'));
+  assert.strictEqual(recovered.author_content_revision, 2, 'the staged content now belongs to revision 2');
+});
+
+test('TEST M10: 模块侧的状态写入必须递增 state_version（唯一写入口）', async () => {
+  const id = `TASK-M10-${++n}`;
+  writeTaskFile(baseTask(id, 'NEEDS_FIX', {
+    runs: [authorRun('RUN-M10-A', 'SESS-M10'), reviewRun('RUN-M10-R', 'REV-M10')],
+    author_session_ref: 'SESS-M10', author_session_executor_type: 'claude',
+    last_review: { ...NEEDS_FIX, task_id: id, revision: 1, reviewed_executor_run_id: 'RUN-M10-R' },
+    revisions_used: 2, review_revision: 2,
+  }));
+  const before = JSON.parse(readFileSync(join(WORK, `${id}.json`), 'utf8')).state_version;
+
+  const claude = makeFake('claude', {
+    author: [{ text: 'fixed content' }],
+    reviewer: [{ review: PASS }],
+  });
+  await recover(id, { adapters: { claude, antigravity: realAdapters().antigravity, codex: realAdapters().codex } });
+
+  const after = JSON.parse(readFileSync(join(WORK, `${id}.json`), 'utf8')).state_version;
+  assert.ok(
+    after > before,
+    `a module-side lifecycle write must advance state_version (${before} -> ${after}); the recovery/scheduler `
+    + 'writers must go through the single version-incrementing entry point'
+  );
 });
 
 test('TEST F: a valid lock held by another owner is refused (TASK_ALREADY_RUNNING)', async () => {

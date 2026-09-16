@@ -141,6 +141,7 @@ test('TEST PROD-1: executor crash -> task recover', async () => {
       ...wsTask(taskId, workDir),
       state: 'AUTHOR_RUNNING',
       last_author_content: '# Durable author work ready for review\n',
+      author_content_revision: 1,
       author_session_ref: 'SESS-AUTHOR-CRASH-SAFE',
       author_session_executor_type: 'claude',
       runs: [{
