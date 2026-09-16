@@ -25,6 +25,7 @@ import {
   DEFAULT_PLANNER_PROVIDER,
   ALLOWED_ROLES,
 } from '../planner/planner.mjs';
+import './helpers/runtime-state-fixture.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import * as orchestrator from '../orchestrator.mjs';
 

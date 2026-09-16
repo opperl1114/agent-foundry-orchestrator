@@ -30,6 +30,7 @@ import { runAcceptance, normalizeAcceptanceCmd, acceptanceBinding } from './lib/
 import { GovernanceBridge, classifyPublishVerdict } from './lib/governance.mjs';
 import { bindReviewResult, latestAuthorRun } from './lib/reviews.mjs';
 import { readLock, isLockStale } from './lib/tasklock.mjs';
+import { TASKS_DIR_DEFAULT, LOCKS_DIR as LOCKS_DIR_DEFAULT, RUNS_DIR } from './lib/config.mjs';
 import { authorResultPersisted, reviewResultPersisted, latestAuthoritativeAcceptance } from './lib/recovery.mjs';
 import { WorktreeSession, buildPlanBatches } from './lib/worktree.mjs';
 
@@ -41,8 +42,8 @@ const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 const NON_REVIVABLE_STATES = new Set(['CANCELLED']);
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const TASKS_DIR = process.env.AF_TASKS_DIR || join(ROOT, 'tasks');
-const LOCKS_DIR = join(ROOT, 'locks');
+const TASKS_DIR = TASKS_DIR_DEFAULT;
+const LOCKS_DIR = LOCKS_DIR_DEFAULT;
 const MAX_REVISIONS_DEFAULT = 3;
 
 const RUNNING_STATES = new Set(['AUTHOR_RUNNING', 'FIX_RUNNING', 'REVIEW_RUNNING']);
@@ -1574,7 +1575,7 @@ if (isMain) {
       console.error(`[orchestrator] task=${tid} is already ${t0.state} (TASK_TERMINAL) - cancel refused`);
       process.exit(2);
     }
-    const RUNS_HANDLE_DIR = join(ROOT, 'runtime', 'runs');
+    const RUNS_HANDLE_DIR = RUNS_DIR;
     // Identity hints for PID-reuse protection. Matched as SUBSTRINGS against
     // /proc/<pid>/cmdline: launchers are bash wrappers (claude-af/agy-af) that
     // `exec` into the real CLI, so the live cmdline shows claude-ccs/claude or

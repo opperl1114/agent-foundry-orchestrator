@@ -31,6 +31,7 @@ import {
   INTENT_STATUSES,
   INTENT_REASONS,
 } from '../approval/intent-policy.mjs';
+import './helpers/runtime-state-fixture.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import * as orchestrator from '../orchestrator.mjs';
 

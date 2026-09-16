@@ -10,6 +10,7 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
 import './helpers/acceptance-allowlist.mjs';

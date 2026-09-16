@@ -29,6 +29,10 @@ function cli(script, args) {
       ...process.env,
       AF_TASKS_DIR: join(SANDBOX, 'tasks'),
       AF_EXECUTORS_DIR: join(ROOT, 'fixtures', 'agent-foundry-global', 'executors'),
+      // The whole runtime group, so a CLI child cannot write into the checkout.
+      AF_RUNTIME_DIR: SANDBOX,
+      AF_LOCKS_DIR: join(SANDBOX, 'locks'),
+      AF_RUNS_DIR: join(SANDBOX, 'runs'),
       AF_SAFETY_STATE_FILE: join(SANDBOX, 'safety-state.json'),
       AF_RUNTIME_EVENTS_LOG: join(SANDBOX, 'events.jsonl'),
     },

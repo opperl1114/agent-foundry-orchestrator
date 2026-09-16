@@ -22,6 +22,8 @@ import './helpers/acceptance-allowlist.mjs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
+import './helpers/runtime-state-fixture.mjs';
+import { RUNS_DIR } from '../lib/config.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { classifyExecutionError } from '../lib/executor-error-classifier.mjs';
 import { saveTaskAtomic, readTaskFile } from '../lib/store.mjs';
@@ -312,7 +314,7 @@ test('TEST PROD-2: executor 403 -> no retry, no fallback (fail closed)', async (
 });
 
 test('TEST PROD-3: scheduler SIGTERM -> no orphan process', async () => {
-  const runsDir = join(process.cwd(), 'runtime', 'runs');
+  const runsDir = RUNS_DIR;
   mkdirSync(runsDir, { recursive: true });
 
   const runId = `RUN-PROD3-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;

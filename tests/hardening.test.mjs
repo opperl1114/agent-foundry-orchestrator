@@ -1,6 +1,7 @@
 // hardening.test.mjs - PHASE 1.1 tests A-F (fake adapters, no API cost)
 // TEST G (agy exact conversation resume) was verified black-box separately.
 import { test, mock } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';

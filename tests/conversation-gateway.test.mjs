@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import './helpers/runtime-state-fixture.mjs';
 import * as orchestrator from '../orchestrator.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 

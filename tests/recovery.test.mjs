@@ -2,6 +2,7 @@
 // State-injection style: each test writes a task JSON into an isolated
 // tasks dir at a specific crash point, then drives recoverTask/continueTask.
 import { test } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

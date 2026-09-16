@@ -10,10 +10,11 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import './helpers/acceptance-allowlist.mjs';
+import { RUNS_DIR as RUNS_DIR_CFG } from '../lib/config.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TASKS_DIR = join(ROOT, 'tasks');
-const RUNS_DIR = join(ROOT, 'runtime', 'runs');
+const RUNS_DIR = RUNS_DIR_CFG;
 const FIX_SH = join(ROOT, 'fixtures', 'make-fixture.sh');
 const GOV_SH = join(ROOT, 'fixtures', 'make-governed-fixture.sh');
 const RUNTAG = Date.now().toString(36);

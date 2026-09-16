@@ -16,6 +16,7 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import './helpers/runtime-state-fixture.mjs';
 import { classifyExecutionError } from '../lib/executor-error-classifier.mjs';
 import { ExecutorRuntimeGuard } from '../lib/executor-runtime-guard.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';

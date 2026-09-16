@@ -2,6 +2,7 @@
 // TEST G/H plus Phase 1 workspace regression. Real vault E2Es live in
 // fixtures/e2e scripts (hermetic fixture vault, no real-Vault contact).
 import { test } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, writeFileSync } from 'node:fs';

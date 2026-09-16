@@ -8,6 +8,7 @@
 //   5. ROLE != PLATFORM: Adapters and router strictly decouple platform identity from task roles.
 
 import { test } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { readdirSync, readFileSync, existsSync, statSync, mkdtempSync, rmSync } from 'node:fs';
@@ -16,6 +17,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import './helpers/executors-fixture.mjs';
+import { RUNS_DIR, RUNTIME_DIR, TASKS_DIR_DEFAULT, LOCKS_DIR } from '../lib/config.mjs';
 import { loadExecutorStatus, EXECUTORS_DIR } from '../lib/executor-status.mjs';
 import { resolveExecutorRoute } from '../lib/executor-router.mjs';
 import { ADAPTERS } from '../lib/adapters.mjs';
@@ -133,11 +135,10 @@ test('INV-3: Governance Bypass Forbidden: local forgery is rejected fail-closed'
 // TEST INV-4: No Credential Persistence
 // ----------------------------------------------------------------------------
 test('INV-4: No Credential Persistence: scans runtime and tasks for zero secret leakage', () => {
-  const dirsToScan = [
-    join(ROOT_DIR, 'tasks'),
-    join(ROOT_DIR, 'runtime'),
-    join(ROOT_DIR, 'locks'),
-  ];
+  // Scan where state is ACTUALLY written (config-resolved): with runtime/test
+  // isolation the checkout's runtime/ is empty, so scanning a hardcoded path
+  // would make this assertion vacuous.
+  const dirsToScan = [TASKS_DIR_DEFAULT, RUNTIME_DIR, LOCKS_DIR];
 
   // Broader pattern: bare token-shaped keys, authorization headers, and the
   // generic Bearer form - not just the three keys the old test looked for.
@@ -222,6 +223,43 @@ test('INV-4: No Credential Persistence: scans runtime and tasks for zero secret 
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+// ----------------------------------------------------------------------------
+// TEST INV-6: Test isolation is established before any path is resolved
+// ----------------------------------------------------------------------------
+test('INV-6: 隔离夹具必须先于任何 lib 模块被导入（否则运行态会写回仓库）', () => {
+  // The runtime/locks/tasks/runs paths are resolved ONCE, when lib/config.mjs is
+  // evaluated. A test that imports a lib module before the isolation fixture
+  // therefore writes into the checkout, silently - `git status` stays clean
+  // because those paths are gitignored, so nothing else would notice.
+  const testsDir = join(ROOT_DIR, 'tests');
+  const offenders = [];
+
+  for (const entry of readdirSync(testsDir)) {
+    if (!entry.endsWith('.test.mjs')) continue;
+    const text = readFileSync(join(testsDir, entry), 'utf8');
+    const lines = text.split('\n');
+    const fixtureLine = lines.findIndex((l) => l.trim().startsWith('import ') && l.includes('helpers/runtime-state-fixture.mjs'));
+    const firstLibLine = lines.findIndex((l) => /'\.\.\/(lib|orchestrator)/.test(l));
+    if (firstLibLine === -1) continue;
+
+    // A test that pulls in the modules that WRITE runtime state must isolate it.
+    const touchesStateWriters = /'\.\.\/lib\/(adapters|scheduler|operator-control|workbench)|'\.\.\/orchestrator/.test(text);
+    if (touchesStateWriters && fixtureLine === -1) {
+      offenders.push(`${entry} (imports a state-writing module without the runtime fixture)`);
+      continue;
+    }
+    if (fixtureLine !== -1 && fixtureLine > firstLibLine) {
+      offenders.push(`${entry} (fixture at ${fixtureLine + 1}, lib import at ${firstLibLine + 1})`);
+    }
+  }
+
+  assert.deepStrictEqual(
+    offenders,
+    [],
+    `the isolation fixture must be imported before any lib module: ${offenders.join('; ')}`
+  );
 });
 
 // ----------------------------------------------------------------------------
