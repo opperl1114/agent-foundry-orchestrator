@@ -17,7 +17,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { saveTaskAtomic } from '../lib/store.mjs';
 import {
-  evaluateIntentPolicy,
+
   INTENT_STATUSES,
   INTENT_REASONS,
 } from './intent-policy.mjs';

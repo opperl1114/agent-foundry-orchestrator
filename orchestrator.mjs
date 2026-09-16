@@ -18,9 +18,9 @@
 //   node orchestrator.mjs inspect --task-id TASK-001
 //   node orchestrator.mjs cancel --task-id TASK-001
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { randomUUID, createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
+
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { selectExecutor, ADAPTERS } from './lib/adapters.mjs';
@@ -31,7 +31,7 @@ import { GovernanceBridge, classifyPublishVerdict } from './lib/governance.mjs';
 import { bindReviewResult, latestAuthorRun } from './lib/reviews.mjs';
 import { readLock, isLockStale } from './lib/tasklock.mjs';
 import { authorResultPersisted, reviewResultPersisted, latestAuthoritativeAcceptance } from './lib/recovery.mjs';
-import { WorktreeSession, buildPlanBatches, isGitRepo, ensureGitRepo } from './lib/worktree.mjs';
+import { WorktreeSession, buildPlanBatches } from './lib/worktree.mjs';
 
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 
@@ -1470,10 +1470,26 @@ if (isMain) {
     console.log(JSON.stringify({ task_id: res.task_id, status: res.status, message: res.message }, null, 2));
     process.exit(0);
   } else if (cmd === 'status') {
-    console.log(JSON.stringify(loadTask(argValue('--task-id')), null, 2));
+    const tid = argValue('--task-id');
+    let t;
+    try {
+      t = loadTask(tid);
+    } catch (err) {
+      // An operator asking about an unknown task should get one clear line, not
+      // an uncaught exception and a raw stack trace.
+      console.error(`[orchestrator] ${String(err?.message ?? err)}`);
+      process.exit(2);
+    }
+    console.log(JSON.stringify(t, null, 2));
   } else if (cmd === 'inspect') {
     const tid = argValue('--task-id');
-    const t = loadTask(tid);
+    let t;
+    try {
+      t = loadTask(tid);
+    } catch (err) {
+      console.error(`[orchestrator] ${String(err?.message ?? err)}`);
+      process.exit(2);
+    }
     const { classifyRecovery } = await import('./lib/recovery.mjs');
     const { loadExecutorStatus } = await import('./lib/executor-status.mjs');
     const recovery = classifyRecovery(t, { availability: loadExecutorStatus() });
@@ -1546,7 +1562,14 @@ if (isMain) {
     const tid = argValue('--task-id');
     const reason = argValue('--reason') ?? 'cancelled by operator';
     const graceMs = Number(argValue('--grace-ms') ?? 4000);
-    const t0 = loadTask(tid);
+    const t0 = (() => {
+      try {
+        return loadTask(tid);
+      } catch (err) {
+        console.error(`[orchestrator] ${String(err?.message ?? err)}`);
+        process.exit(2);
+      }
+    })();
     if (TERMINAL_STATES.has(t0.state)) {
       console.error(`[orchestrator] task=${tid} is already ${t0.state} (TASK_TERMINAL) - cancel refused`);
       process.exit(2);
