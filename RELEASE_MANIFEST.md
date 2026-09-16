@@ -8,7 +8,7 @@
 | **Frozen At** | 2026-09-15T22:30:00+08:00 |
 | **Architecture Reference** | [`FINAL_ARCHITECTURE.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/FINAL_ARCHITECTURE.md) |
 | **Safety Model Reference** | [`EXECUTOR_SAFETY_MODEL.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/EXECUTOR_SAFETY_MODEL.md) |
-| **Regression Test Status** | **171 / 171 PASS (100%)** — verified on a CLEAN CLONE (`git clone . /tmp/verify && node --test`), not only on the author's checkout |
+| **Regression Test Status** | **181 / 181 PASS (100%)** — verified on a CLEAN CLONE (`git clone . /tmp/verify && node --test`), not only on the author's checkout |
 | **Last Hardened At** | 2026-09-16 (see Post-freeze Hardening below) |
 | **Execution Engine** | Multi-step DAG state machine (`orchestrator.mjs` + `lib/scheduler.mjs` + `lib/worktree.mjs`) |
 | **Storage Architecture** | Filesystem atomic rename (`saveTaskAtomic`), zero SQLite/Postgres/Redis dependencies |
@@ -60,8 +60,29 @@ corrupt state file        -> OPEN_MANUAL_RESET / canExecute=false   (was CLOSED 
 auto_publish+published:false -> unknown                             (was published)
 ```
 
-Remaining batches from the same review (B2 source-of-truth/recovery, B3 minors
-and hygiene) are still open.
+**B2 — source-of-truth consistency and recovery correctness**
+
+| Commit | Change |
+| :--- | :--- |
+| `6dd4e88` | Per-executor policy is deep merged (antigravity kept losing its 1h cooldown), cooldown_until is epoch ms everywhere and compared in ms, a guard refusal is `ENVIRONMENT_FAULT` rather than a fabricated `ACCOUNT_POLICY`, codex forwards its purpose so a recovery probe can acquire a slot, the cline fallback no longer auto-resets the breaker, and log rotation no longer drops events appended while it read the file. |
+| `3c4a755` | The CLI `run`/`resume` take the task lock; the staged author content is bound to its revision (a crashed fix no longer resumes on the previous revision's content) with a dedicated `FIX_RUNNING` state; acceptance reuse is content-addressed; lock renewal is atomic with an ownership re-check; every lifecycle write goes through one version-incrementing writer (`saveTaskWithVersion`), which required validating the stale-recovery plan BEFORE recovery writes its own bookkeeping; a failed parallel batch cancels sibling runs before tearing down worktrees; `tasksDir` is forwarded to the continuation. |
+| `d33d09e` | All author-machine hardcoded paths removed from `lib/config.mjs` and `bin/cline-af` (env -> sibling -> `$HOME`; an unreadable canonical fails closed), and a missing capability registry now fails CLOSED: the router returns `primary: null` / `EXECUTOR_REGISTRY_MISSING` and the scheduler's preflight refuses the task, instead of silently routing as if every executor's state were known. |
+
+**Verified after B2** (clean clone, Node v24):
+
+```text
+ℹ tests 181
+ℹ pass 181
+ℹ fail 0
+ℹ skipped 0
+```
+
+The plan's §5 checklist now passes end to end, including the two items that had
+never passed: `grep -rn '/mnt/c/Users/relaret\|/home/relaret' lib/ bin/ config/`
+returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
+`EXECUTOR_REGISTRY_MISSING` refusal instead of a silently green suite.
+
+Remaining batch from the same review (B3 minors and hygiene) is still open.
 
 ---
 
@@ -164,7 +185,7 @@ agent-foundry-orchestrator/
 ├── tasks/                             # Task JSON directory (factory clean: task-template.json + .gitkeep)
 ├── runtime/                           # Runtime state & policies (factory clean: zero logs)
 ├── locks/                             # Exclusive execution locks (.gitkeep)
-├── tests/                             # Automated test suite (171 tests, 100% passing on a clean clone)
+├── tests/                             # Automated test suite (181 tests, 100% passing on a clean clone)
 ├── FINAL_ARCHITECTURE.md              # Authoritative architectural blueprint
 ├── EXECUTOR_SAFETY_MODEL.md           # Authoritative executor safety and failure model
 ├── AGY_INCIDENT_POSTMORTEM.md         # Postmortem and design rationale for runtime guard

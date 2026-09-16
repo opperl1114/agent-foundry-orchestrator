@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator — Architecture Specification (Full Stack v1.2)
 
 > **当前架构版本：** Production Release v1.2 (Full Capabilities Baseline)  
-> **自动化测试状态：** **171 / 171 PASS (100%)**  
+> **自动化测试状态：** **181 / 181 PASS (100%)**  
 > **设计核心：** 零外部数据库、零常驻守护进程、纯文件系统原子持久化、环境自适应无硬编码路径。
 
 ---
@@ -162,7 +162,7 @@ graph TD
 
 ---
 
-## 8. 自动化测试套件矩阵 (171 Tests All Green)
+## 8. 自动化测试套件矩阵 (181 Tests All Green)
 
 | 测试模块 | 用例数 | 覆盖核心保障 |
 | :--- | :---: | :--- |
@@ -187,9 +187,11 @@ graph TD
 | `tests/concurrency.test.mjs` | 9 | 并行任务状态与会话隔离、stale 锁抢占 |
 | `tests/governance.test.mjs` | 11 | L2 自动发布、L3 人工门禁、拒绝不可降级、策略类别不等于发布结果 |
 | `tests/hardening.test.mjs` | 7 | 验收命令白名单加固、任务文件原子写 |
-| `tests/recovery.test.mjs` | 11 | 断点接续精准度、死锁安全回收、幂等恢复 |
+| `tests/recovery.test.mjs` | 13 | 断点接续精准度、死锁安全回收、幂等恢复 |
 | `tests/conversation-gateway.test.mjs` | 6 | MCP Gateway 接口接入与任务派发（自带夹具） |
 | `tests/executor-error-classifier.test.mjs` | 7 | stdout/stderr 403 与 TOS 一律 fail-closed、测试日志 403 不误报 |
 | `tests/acceptance-allowlist.test.mjs` | 6 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
 | `tests/runtime-guard-state.test.mjs` | 4 | 熔断状态原子写、损坏 fail-closed、纯读查询、冷却投影 |
-| **总计** | **171** | **100% PASS** |
+| `tests/runtime-guard-policy.test.mjs` | 4 | 策略深合并、ISO 冷却归一、护栏拦截分类、recovery_probe 穿透 |
+| `tests/registry-fail-closed.test.mjs` | 3 | 真源缺失时路由与调度器 fail-closed、出厂代码零作者机路径 |
+| **总计** | **181** | **100% PASS** |
