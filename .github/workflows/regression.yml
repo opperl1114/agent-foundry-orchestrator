@@ -88,12 +88,12 @@ jobs:
       # never removes it leaves a directory behind on every single run.
       - name: no test sandboxes left in /tmp
         run: |
-          # Directories only: an earlier version of this step globbed /tmp/af-*
-          # and flagged the capture file this very workflow writes, failing the
-          # build for a reason unrelated to the tests.
-          leftovers=$(ls -d /tmp/af-*/ 2>/dev/null | wc -l)
+          # The fixtures use one dedicated namespace. A broader glob (/tmp/af-*)
+          # flagged this workflow's own capture file - and, locally, a scratch
+          # clone - failing the build for reasons unrelated to the tests.
+          leftovers=$(ls -d /tmp/af-test-*/ 2>/dev/null | wc -l)
           if [ "$leftovers" -ne 0 ]; then
-            echo "::error::$leftovers test sandbox(es) were left behind:"
-            ls -d /tmp/af-*/ | head -10
+            echo "::error::$leftovers fixture sandbox(es) were left behind:"
+            ls -d /tmp/af-test-*/ | head -10
             exit 1
           fi

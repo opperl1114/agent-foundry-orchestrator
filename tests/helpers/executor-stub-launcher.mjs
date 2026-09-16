@@ -21,7 +21,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const STUB_DIR = mkdtempSync(join(tmpdir(), 'af-executor-stub-'));
+export const STUB_DIR = mkdtempSync(join(tmpdir(), 'af-test-executor-stub-'));
 
 // A sandbox that outlives the process is its own kind of residue: these are
 // created once per test FILE per run, so without this they accumulate in /tmp.

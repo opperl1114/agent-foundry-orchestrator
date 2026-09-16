@@ -17,7 +17,7 @@ const HANGING_SOURCE = `#!/usr/bin/env node
 setInterval(() => {}, 1000);
 `;
 
-const STUB_BIN_DIR = mkdtempSync(join(tmpdir(), 'af-executor-hang-'));
+const STUB_BIN_DIR = mkdtempSync(join(tmpdir(), 'af-test-executor-hang-'));
 
 function writeHangingStub(fileName) {
   const file = join(STUB_BIN_DIR, fileName);

@@ -17,7 +17,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SANDBOX = mkdtempSync(join(tmpdir(), 'af-cli-'));
+const SANDBOX = mkdtempSync(join(tmpdir(), 'af-test-cli-'));
 process.on('exit', () => { try { rmSync(SANDBOX, { recursive: true, force: true }); } catch { /* best effort */ } });
 
 function cli(script, args) {

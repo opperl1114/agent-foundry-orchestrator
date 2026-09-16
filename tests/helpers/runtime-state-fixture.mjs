@@ -15,7 +15,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const RUNTIME_SANDBOX = mkdtempSync(join(tmpdir(), 'af-runtime-'));
+export const RUNTIME_SANDBOX = mkdtempSync(join(tmpdir(), 'af-test-runtime-'));
 
 // A sandbox that outlives the process is its own kind of residue: these are
 // created once per test FILE per run, so without this they accumulate in /tmp.

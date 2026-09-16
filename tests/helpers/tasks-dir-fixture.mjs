@@ -14,7 +14,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const TEST_TASKS_DIR = mkdtempSync(join(tmpdir(), 'af-tasks-'));
+export const TEST_TASKS_DIR = mkdtempSync(join(tmpdir(), 'af-test-tasks-'));
 
 // A sandbox that outlives the process is its own kind of residue: these are
 // created once per test FILE per run, so without this they accumulate in /tmp.

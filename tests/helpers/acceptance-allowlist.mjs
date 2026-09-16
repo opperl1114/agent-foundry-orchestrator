@@ -14,7 +14,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const ALLOWLIST_DIR = mkdtempSync(join(tmpdir(), 'af-acceptance-allowlist-'));
+const ALLOWLIST_DIR = mkdtempSync(join(tmpdir(), 'af-test-acceptance-allowlist-'));
 export const TEST_ACCEPTANCE_ALLOWLIST = join(ALLOWLIST_DIR, 'allowlist.json');
 
 // A sandbox that outlives the process is its own kind of residue: these are
