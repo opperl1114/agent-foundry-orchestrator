@@ -32,8 +32,20 @@ import { Scheduler } from '../lib/scheduler.mjs';
 
 const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 
+// Every temp dir this file creates is removed when the process exits: a test
+// that only cleans up on its happy path (or that creates a fixture inside a
+// helper like boundTask) still leaves the directory behind on /tmp.
+const createdDirs = [];
+process.on('exit', () => {
+  for (const dir of createdDirs) {
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
 function tmpDir(prefix) {
-  return mkdtempSync(join(tmpdir(), prefix));
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  createdDirs.push(dir);
+  return dir;
 }
 
 function boundTask(over = {}) {

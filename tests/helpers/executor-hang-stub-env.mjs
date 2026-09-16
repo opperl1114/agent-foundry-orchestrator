@@ -8,7 +8,8 @@
 //
 // The stubs start and stay alive, which is what the cancellation tests need.
 
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import {
+  rmSync, chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 
@@ -26,6 +27,13 @@ function writeHangingStub(fileName) {
 }
 
 export const CLAUDE_HANGING_STUB = writeHangingStub('claude-af-stub');
+
+// A sandbox that outlives the process is its own kind of residue: these are
+// created once per test FILE per run, so without this they accumulate in /tmp.
+process.on('exit', () => {
+  try { rmSync(STUB_BIN_DIR, { recursive: true, force: true }); } catch { /* best effort */ }
+});
+
 export const AGY_HANGING_STUB = writeHangingStub('agy-af-stub');
 // codex is spawned by name, so the shim must be called exactly "codex".
 export const CODEX_HANGING_STUB = writeHangingStub('codex');

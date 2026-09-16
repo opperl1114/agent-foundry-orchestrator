@@ -9,12 +9,20 @@
 // AF_ACCEPTANCE_ALLOWLIST is read per call, so import order does not matter.
 // An explicitly configured allowlist always wins.
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import {
+  rmSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const ALLOWLIST_DIR = mkdtempSync(join(tmpdir(), 'af-acceptance-allowlist-'));
 export const TEST_ACCEPTANCE_ALLOWLIST = join(ALLOWLIST_DIR, 'allowlist.json');
+
+// A sandbox that outlives the process is its own kind of residue: these are
+// created once per test FILE per run, so without this they accumulate in /tmp.
+process.on('exit', () => {
+  try { rmSync(ALLOWLIST_DIR, { recursive: true, force: true }); } catch { /* best effort */ }
+});
+
 
 writeFileSync(TEST_ACCEPTANCE_ALLOWLIST, JSON.stringify({
   allowed: [

@@ -10,11 +10,19 @@
 // Point the whole group at one temporary sandbox. Import this BEFORE anything
 // that loads lib/config.mjs - the paths are resolved once, at module load. An
 // explicitly configured variable always wins, as does a finer-grained one.
-import { mkdtempSync } from 'node:fs';
+import {
+  rmSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 export const RUNTIME_SANDBOX = mkdtempSync(join(tmpdir(), 'af-runtime-'));
+
+// A sandbox that outlives the process is its own kind of residue: these are
+// created once per test FILE per run, so without this they accumulate in /tmp.
+process.on('exit', () => {
+  try { rmSync(RUNTIME_SANDBOX, { recursive: true, force: true }); } catch { /* best effort */ }
+});
+
 export const SAFETY_STATE_FILE = join(RUNTIME_SANDBOX, 'executor-safety-state.json');
 export const RUNTIME_EVENTS_LOG = join(RUNTIME_SANDBOX, 'executor-runtime-events.jsonl');
 

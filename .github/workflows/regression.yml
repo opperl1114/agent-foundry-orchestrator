@@ -68,3 +68,14 @@ jobs:
           if [ -n "$tracked" ]; then
             echo "::error::runtime state must not be tracked:"; echo "$tracked"; exit 1
           fi
+
+      # The fixtures create temporary sandboxes; a test file that creates one and
+      # never removes it leaves a directory behind on every single run.
+      - name: no test sandboxes left in /tmp
+        run: |
+          leftovers=$(ls -d /tmp/af-* 2>/dev/null | wc -l)
+          if [ "$leftovers" -ne 0 ]; then
+            echo "::error::$leftovers test sandbox(es) were left behind:"
+            ls -d /tmp/af-* | head -10
+            exit 1
+          fi
