@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator — Architecture Specification (Full Stack v1.2)
 
 > **当前架构版本：** Production Release v1.2 (Full Capabilities Baseline)  
-> **自动化测试状态：** **181 / 181 PASS (100%)**  
+> **自动化测试状态：** **182 / 182 PASS (100%)**  
 > **设计核心：** 零外部数据库、零常驻守护进程、纯文件系统原子持久化、环境自适应无硬编码路径。
 
 ---
@@ -162,7 +162,7 @@ graph TD
 
 ---
 
-## 8. 自动化测试套件矩阵 (181 Tests All Green)
+## 8. 自动化测试套件矩阵 (182 Tests All Green)
 
 | 测试模块 | 用例数 | 覆盖核心保障 |
 | :--- | :---: | :--- |
@@ -183,7 +183,7 @@ graph TD
 | `tests/operator-maintenance.test.mjs` | 6 | 历史任务修剪 (Prune)、日志轮转 (Rotate)、冷却状态投影 |
 | `tests/runtime-safety.test.mjs` | 7 | 并发槽位限制、防并发打崩、死循环检测、熔断跨执行器隔离 |
 | `tests/cancellation.test.mjs` | 3 | 精确 runId 进程终止、任务取消隔离 |
-| `tests/cancellation-real-adapters.test.mjs` | 4 | codex/claude/antigravity 真实适配器取消证据、取消粘滞不可覆盖 |
+| `tests/cancellation-real-adapters.test.mjs` | 5 | codex/claude/antigravity 真实适配器取消证据、取消粘滞不可覆盖 |
 | `tests/concurrency.test.mjs` | 9 | 并行任务状态与会话隔离、stale 锁抢占 |
 | `tests/governance.test.mjs` | 11 | L2 自动发布、L3 人工门禁、拒绝不可降级、策略类别不等于发布结果 |
 | `tests/hardening.test.mjs` | 7 | 验收命令白名单加固、任务文件原子写 |
@@ -194,4 +194,4 @@ graph TD
 | `tests/runtime-guard-state.test.mjs` | 4 | 熔断状态原子写、损坏 fail-closed、纯读查询、冷却投影 |
 | `tests/runtime-guard-policy.test.mjs` | 4 | 策略深合并、ISO 冷却归一、护栏拦截分类、recovery_probe 穿透 |
 | `tests/registry-fail-closed.test.mjs` | 3 | 真源缺失时路由与调度器 fail-closed、出厂代码零作者机路径 |
-| **总计** | **181** | **100% PASS** |
+| **总计** | **182** | **100% PASS** |

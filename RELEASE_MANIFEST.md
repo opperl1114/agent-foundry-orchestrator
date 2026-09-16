@@ -8,7 +8,7 @@
 | **Frozen At** | 2026-09-15T22:30:00+08:00 |
 | **Architecture Reference** | [`FINAL_ARCHITECTURE.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/FINAL_ARCHITECTURE.md) |
 | **Safety Model Reference** | [`EXECUTOR_SAFETY_MODEL.md`](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/EXECUTOR_SAFETY_MODEL.md) |
-| **Regression Test Status** | **181 / 181 PASS (100%)** — verified on a CLEAN CLONE (`git clone . /tmp/verify && node --test`), not only on the author's checkout |
+| **Regression Test Status** | **182 / 182 PASS (100%)** — verified on a CLEAN CLONE (`git clone . /tmp/verify && node --test`), not only on the author's checkout |
 | **Last Hardened At** | 2026-09-16 (see Post-freeze Hardening below) |
 | **Execution Engine** | Multi-step DAG state machine (`orchestrator.mjs` + `lib/scheduler.mjs` + `lib/worktree.mjs`) |
 | **Storage Architecture** | Filesystem atomic rename (`saveTaskAtomic`), zero SQLite/Postgres/Redis dependencies |
@@ -71,8 +71,8 @@ auto_publish+published:false -> unknown                             (was publish
 **Verified after B2** (clean clone, Node v24):
 
 ```text
-ℹ tests 181
-ℹ pass 181
+ℹ tests 182
+ℹ pass 182
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -91,8 +91,8 @@ returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
 **Verified after B3** (clean clone, Node v24, via `npm test`):
 
 ```text
-ℹ tests 181
-ℹ pass 181
+ℹ tests 182
+ℹ pass 182
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -105,6 +105,25 @@ bin/ config/` returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
 Not verified locally: the CI workflow itself (`.github/workflows/regression.yml`)
 has no runner here. Its steps are the same commands that were run by hand above;
 it is the one artefact in this batch that has not been executed end to end.
+
+**Follow-up on the observations logged during B2/B3**
+
+| Commit | Change |
+| :--- | :--- |
+| `4f800a7` | Cancellation race: a cancel landing between "run id announced" and "process registered" found no handle and terminated nothing, so the process ran to completion behind a task already marked CANCELLED; the recorded request is now honoured the moment the child exists. Blocked fallback: a cline fallback refused by the breaker reported the circuit refusal as the outcome, hiding the quota refusal that actually failed - the root cause is returned with a `fallback_blocked` record. |
+| `4bb5448` | Isolating the repository's `tasks/` directory for tests: `approval/intent-gate.mjs` now honours `AF_TASKS_DIR`, nine test files import the isolation fixture, and governance TEST F-gov forges its task where the module under test actually reads. The 136 historical leftovers were archived to `~/DSHWorkSpace/afr-tasks-leftovers-<ts>.tar.gz` and removed. |
+
+**Follow-up verification** (fresh clone, `npm test`):
+
+```text
+ℹ tests 182
+ℹ pass 182
+ℹ fail 0
+ℹ skipped 0
+```
+
+`tasks/` holds `task-template.json` before and after the run, and
+`git status --porcelain` is empty.
 
 ---
 
@@ -207,7 +226,7 @@ agent-foundry-orchestrator/
 ├── tasks/                             # Task JSON directory (factory clean: task-template.json + .gitkeep)
 ├── runtime/                           # Runtime state & policies (factory clean: zero logs)
 ├── locks/                             # Exclusive execution locks (.gitkeep)
-├── tests/                             # Automated test suite (181 tests, 100% passing on a clean clone)
+├── tests/                             # Automated test suite (182 tests, 100% passing on a clean clone)
 ├── FINAL_ARCHITECTURE.md              # Authoritative architectural blueprint
 ├── EXECUTOR_SAFETY_MODEL.md           # Authoritative executor safety and failure model
 ├── AGY_INCIDENT_POSTMORTEM.md         # Postmortem and design rationale for runtime guard
