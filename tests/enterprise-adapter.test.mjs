@@ -8,6 +8,7 @@
 //   TEST 6A-5: ROLE != PLATFORM: same vertex executor acts dynamically as author and reviewer
 
 import { test, after } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

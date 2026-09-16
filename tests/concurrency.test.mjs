@@ -12,6 +12,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import './helpers/runtime-state-fixture.mjs';
+import { RUNTIME_DIR, LOCKS_DIR, TASKS_DIR_DEFAULT as TASKS_DIR } from '../lib/config.mjs';
 import { Scheduler, TargetCoordinator } from '../lib/scheduler.mjs';
 import { acquireTaskLock, releaseTaskLock, isLockStale, readLock } from '../lib/tasklock.mjs';
 import { loadExecutorStatus } from '../lib/executor-status.mjs';
@@ -21,8 +23,8 @@ import { saveTaskAtomic, readTaskFile } from '../lib/store.mjs';
 import './helpers/acceptance-allowlist.mjs';
 
 const ORCH_ROOT = fileURLToPath(new URL('..', import.meta.url));
-const taskFile = (id) => join(ORCH_ROOT, 'tasks', `${id}.json`);
-const lockFile = (id) => join(ORCH_ROOT, 'locks', `${id}.lock`);
+const taskFile = (id) => join(TASKS_DIR, `${id}.json`);
+const lockFile = (id) => join(LOCKS_DIR, `${id}.lock`);
 const readTask = (id) => readTaskFile(taskFile(id));
 
 let seq = 0;
@@ -605,7 +607,7 @@ test('E2E-G: stale task lock is detected and recovered; a valid lock is still re
   });
 
   // task in the store + a lock from a crashed orchestrator on disk
-  mkdirSync(join(ORCH_ROOT, 'locks'), { recursive: true });
+  mkdirSync(LOCKS_DIR, { recursive: true });
   const deadProc = spawnSync(process.execPath, ['-e', '']); // short-lived process -> guaranteed dead pid
   const staleLock = {
     task_id: 'TASK-P3G',
@@ -627,7 +629,7 @@ test('E2E-G: stale task lock is detected and recovered; a valid lock is still re
   // 2. STALE lock (dead pid, unexpired lease): recovery must work because the
   //    owner pid is gone - never a permanent failure.
   writeFileSync(lockFile('TASK-P3G'), JSON.stringify(staleLock), { flag: 'wx' });
-  assert.strictEqual(isLockStale(readLock(join(ORCH_ROOT, 'locks'), 'TASK-P3G')), true, 'dead-pid lock is stale');
+  assert.strictEqual(isLockStale(readLock(LOCKS_DIR, 'TASK-P3G')), true, 'dead-pid lock is stale');
   const sched = mkSched();
   sched.runTask('TASK-P3G'); // must recover, not fail
   await sched.waitAll();
@@ -638,7 +640,7 @@ test('E2E-G: stale task lock is detected and recovered; a valid lock is still re
   assert.strictEqual(sched.recoveredStaleLocks[0].stale_lock_recovered, true);
   assert.strictEqual(sched.recoveredStaleLocks[0].previous_pid, deadProc.pid);
   assert.strictEqual(sched.recoveredStaleLocks[0].stale_reason, 'owner_pid_not_alive');
-  const schedMeta = JSON.parse(readFileSync(join(ORCH_ROOT, 'runtime', 'scheduler.json'), 'utf8'));
+  const schedMeta = JSON.parse(readFileSync(join(RUNTIME_DIR, 'scheduler.json'), 'utf8'));
   assert.ok(schedMeta.stale_lock_recovered.some((r) => r.task_id === 'TASK-P3G' && r.stale_lock_recovered === true));
   assert.ok(!existsSync(lockFile('TASK-P3G')), 'lock released after completion');
   assert.ok(fakeA.calls.every((c) => c.cwd === dirA));

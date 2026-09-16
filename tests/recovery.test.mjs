@@ -2,6 +2,7 @@
 // State-injection style: each test writes a task JSON into an isolated
 // tasks dir at a specific crash point, then drives recoverTask/continueTask.
 import { test } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -9,6 +10,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before } from 'node:test';
 import { recoverTask } from '../lib/recovery.mjs';
+import { acceptanceBinding } from '../lib/acceptance.mjs';
 import { continueTask, resumeGovernance } from '../orchestrator.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
 import { acquireTaskLock, readLock } from '../lib/tasklock.mjs';
@@ -126,6 +128,10 @@ const fixRun = (id, sess) => ({
 });
 
 function writeTaskFile(task) {
+  // These fixtures simulate a task that reached a crash point, so it went
+  // through the Control Plane and carries the acceptance trust anchor. Writing
+  // the file without one is now refused (an absent anchor means it was removed).
+  task.acceptance_binding = task.acceptance_binding ?? acceptanceBinding(task);
   saveTaskAtomic(join(WORK, `${task.task_id}.json`), task);
 }
 

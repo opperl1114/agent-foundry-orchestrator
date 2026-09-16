@@ -71,8 +71,8 @@ auto_publish+published:false -> unknown                             (was publish
 **Verified after B2** (clean clone, Node v24):
 
 ```text
-ℹ tests 182
-ℹ pass 182
+ℹ tests 195
+ℹ pass 195
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -91,8 +91,8 @@ returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
 **Verified after B3** (clean clone, Node v24, via `npm test`):
 
 ```text
-ℹ tests 182
-ℹ pass 182
+ℹ tests 195
+ℹ pass 195
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -113,17 +113,32 @@ it is the one artefact in this batch that has not been executed end to end.
 | `4f800a7` | Cancellation race: a cancel landing between "run id announced" and "process registered" found no handle and terminated nothing, so the process ran to completion behind a task already marked CANCELLED; the recorded request is now honoured the moment the child exists. Blocked fallback: a cline fallback refused by the breaker reported the circuit refusal as the outcome, hiding the quota refusal that actually failed - the root cause is returned with a `fallback_blocked` record. |
 | `4bb5448` | Isolating the repository's `tasks/` directory for tests: `approval/intent-gate.mjs` now honours `AF_TASKS_DIR`, nine test files import the isolation fixture, and governance TEST F-gov forges its task where the module under test actually reads. The 136 historical leftovers were archived to `~/DSHWorkSpace/afr-tasks-leftovers-<ts>.tar.gz` and removed. |
 
+**Third-party review follow-up** (an independent review of `434114e`, plus what
+verifying it turned up)
+
+| Item | Change |
+| :--- | :--- |
+| H1 (severe) | The legacy shell-string acceptance branch returned BEFORE any allowlist check, so a task file holding `allow_legacy_shell_acceptance` plus a string could run an arbitrary shell - while the README states the command must match the whitelist, and `isAllowed`'s legacy guard was unreachable dead code. The branch is now routed through the allowlist, which never accepts a shell string, so the channel is closed and the README claim is true. |
+| H2 (medium) | A MISSING `acceptance_binding` was treated as acceptable and the scheduler re-bound whatever it found on read, so deleting one field unbound the trust anchor. Missing now fails closed; `enqueue` adopts a pre-placed definition by writing the anchor once (a metadata write, so it cannot disturb an in-flight recovery plan's `state_version`), and dispatch refuses an unbound one. |
+| H3 (medium) | `runAcceptance` had no timeout, no kill and was invisible to the shutdown reclamation (which only knew executor runs), so a hung - and legitimately allowlisted - command wedged the task forever and survived SIGTERM. It now has `acceptance_timeout_ms` (default 10 min) with SIGTERM -> grace -> SIGKILL, records `failure_reason: 'timeout'`, and `terminateActiveAcceptances()` is called by both shutdown paths. |
+| Found while verifying | The allowlist matched on the command's BASENAME, so `/tmp/anything/node --test` was authorized by the `node` entry; matching is now exact. The doc count is no longer hand-maintained: CI compares the README's number against the suite it just ran. |
+
 **Follow-up verification** (fresh clone, `npm test`):
 
 ```text
-ℹ tests 182
-ℹ pass 182
+ℹ tests 195
+ℹ pass 195
 ℹ fail 0
 ℹ skipped 0
 ```
 
-`tasks/` holds `task-template.json` before and after the run, and
-`git status --porcelain` is empty.
+A full run now leaves the checkout byte-for-byte untouched: `tasks/`, `locks/`
+and `runtime/` are identical before and after, and `git status --porcelain
+--ignored` is completely empty (it used to list nothing while `runtime/` was
+quietly accumulating `scheduler.json` and `operator-activity/`). The CI check was
+strengthened to `--ignored` for exactly that reason, and INV-6 makes the ordering
+rule mechanical: a test that imports a state-writing module without the runtime
+fixture, or imports one before it, fails the suite.
 
 ---
 

@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator
 
 > **企业级多智能体协同调度与控制核心 (Multi-Agent Task Orchestrator & Control Plane)**  
-> 当前版本：`Production Release v1.2 (Full Capabilities)` ｜ 自动化测试状态：**182 / 182 PASS (100%)（干净克隆验证）**
+> 当前版本：`Production Release v1.2 (Full Capabilities)` ｜ 自动化测试状态：**195 / 195 PASS (100%)（干净克隆验证）**
 
 ---
 
@@ -32,7 +32,8 @@ Agent Foundry Orchestrator 构建了一套**高度自主、具备意图门禁防
 ### 4. 🔄 双模型独立博弈与自愈闭环 (Self-Healing Loop)
 * **创作者与独立审查者**：代码由 **Author** 产出，由物理隔离的 **Reviewer** 进行多维度 Review。
 * **精确会话恢复 (Exact Resume)**：Reviewer 提出 `NEEDS_FIX` 时，系统自动精准接续原 Author 会话上下文修复，全程零人工传话。
-* **确定性验收测试**：验收命令必须命中静态白名单 `config/acceptance-allowlist.json`，并与任务文件完整性哈希绑定（被改写即 fail-closed）；AI 输出绝对不能随意作为 Shell 执行。
+* **确定性验收测试**：验收命令必须命中静态白名单 `config/acceptance-allowlist.json`，并与任务文件完整性哈希绑定（被改写即 fail-closed）；AI 输出绝对不能随意作为 Shell 执行。旧式 Shell 字符串通道**已彻底关闭**（其开关已不再能打开任何通道）。
+* **缺省验收命令的语义**：任务未提供 `acceptance_cmd` 时**没有确定性门禁**——验收阶段直接通过，此时唯一的门是独立 reviewer 的 PASS。这是一个显式可见的状态（任务的 `acceptance_status: "not_configured"`，并写入运行时审计事件 `acceptance_not_configured`），而不是需要靠"`acceptance_runs` 为空"去推断的隐含行为。
 
 ### 5. ⚡ 企业级断路器与受控恢复 (Runtime Guard & Gated Recovery)
 * **三维状态解耦**：严格分离 **Capability（机制能力）**、**Availability（账号可用性）** 与 **Runtime Safety（并发与熔断）**。
@@ -188,7 +189,7 @@ agent-foundry-orchestrator/
 ├── tasks/                             # 任务持久化目录 (出厂纯净: task-template.json + .gitkeep)
 ├── runtime/                           # 运行时状态与安全策略 (出厂纯净: 零日志)
 ├── locks/                             # 进程互斥排他锁目录
-└── tests/                             # 全量自动化测试套件 (182 个用例全部通过)
+└── tests/                             # 全量自动化测试套件 (195 个用例全部通过)
 ```
 
 ---
@@ -200,7 +201,7 @@ agent-foundry-orchestrator/
 node --test
 ```
 
-**测试矩阵全绿通过 (182 / 182 PASS, 100%) （干净克隆 `git clone . && node --test`）**：
+**测试矩阵全绿通过 (195 / 195 PASS, 100%) （干净克隆 `git clone . && node --test`）**：
 * 🌲 **Git Worktree 并发与合并冲突**：多分支隔离并行写入、冲突检测安全 Fail-Closed；
 * 🧭 **Planner 规划层契约**：DAG 分批有效性、规划器与执行器职责隔离边界；
 * 🛡️ **Human Intent Gate 意图门禁**：高危写操作拦截、删除阻断、人工通过接续；

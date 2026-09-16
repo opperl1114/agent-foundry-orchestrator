@@ -1,6 +1,7 @@
 // hardening.test.mjs - PHASE 1.1 tests A-F (fake adapters, no API cost)
 // TEST G (agy exact conversation resume) was verified black-box separately.
 import { test, mock } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -233,13 +234,26 @@ test('TEST F: same-platform sessions are independent; session collision is rejec
   assert.strictEqual(new Set(ids).size, ids.length);
 });
 
-test('acceptance_cmd normalization: legacy shell forbidden by default', () => {
+test('acceptance_cmd normalization: the legacy shell string is closed', () => {
   assert.throws(() => normalizeAcceptanceCmd({ command: 'node' }));            // missing args array
   assert.throws(() => normalizeAcceptanceCmd(42));
-  assert.throws(() => normalizeAcceptanceCmd('node --test'), /forbidden by default/);
+  assert.throws(() => normalizeAcceptanceCmd('node --test'), /legacy shell-string/);
   assert.strictEqual(normalizeAcceptanceCmd(null), null);
-  // explicit trusted opt-in only
-  assert.strictEqual(normalizeAcceptanceCmd('node --test', { allowLegacy: true }).legacy_shell, true);
+
+  // The task file's opt-in flag no longer opens a channel: the legacy string
+  // still has to pass the allowlist, and a shell string is never allowlistable
+  // (it is not a program with an argument prefix). Previously this returned a
+  // legacy spec and ran `bash -lc <string>` without consulting the whitelist.
+  assert.throws(
+    () => normalizeAcceptanceCmd('node --test', { allowLegacy: true }),
+    /acceptance_command_not_allowlisted/,
+    'the legacy channel must be closed even with the explicit opt-in'
+  );
+  assert.throws(
+    () => normalizeAcceptanceCmd('id -un; echo pwned', { allowLegacy: true }),
+    /acceptance_command_not_allowlisted/
+  );
+
   assert.deepStrictEqual(normalizeAcceptanceCmd({ command: 'node', args: ['--test'] }),
     { command: 'node', args: ['--test'], legacy_shell: false });
 });

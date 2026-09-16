@@ -35,8 +35,30 @@ Orchestrator 支持通过 `SIGINT` (Ctrl+C) 或 `SIGTERM` 触发优雅停机：
 # 向 Orchestrator 进程发送终止信号
 kill -TERM <PID>
 ```
-- Orchestrator 捕获信号后，主动向所有活跃的子进程发送信号并清理句柄。
+- Orchestrator 捕获信号后，主动向所有活跃的子进程发送信号并清理句柄，**包括正在执行的验收子进程**。
 - 未完成的任务保留在当前状态，等待后续显式恢复。
+
+#### 取消任务与验收子进程的边界（务必分清两种信号）
+
+`orchestrator.mjs cancel --task-id <id>` 只作用于**执行器**进程（它按运行句柄 + `/proc/<pid>/cmdline` 校验身份后发信号）。它**不覆盖进行中的验收命令**，这是刻意的：把验收子进程杀掉，在属主进程看来就是"验收命令失败"，可能把任务推进修复循环，而不是取消它。所以：
+
+```bash
+# 正确：用 SIGTERM 停掉属主进程，验收子进程会在进程内被回收
+kill -TERM <orchestrator pid>
+
+# 不要用 SIGKILL 停属主：SIGTERM 处理器不会运行，
+# 验收子进程会被收养，且它依赖的进程内超时（acceptance_timeout_ms）也随之消失
+```
+
+若确实发生了 `SIGKILL`（或属主进程崩溃），遗留的验收子进程可以通过其**持久句柄**找到并回收：
+
+```bash
+af-admin acceptance list            # 列出验收子进程句柄（含是否孤儿）
+af-admin acceptance reap            # 干跑：只报告将处理哪些
+af-admin acceptance reap --confirm  # 只回收"属主已死且 cmdline 仍与记录一致"的进程
+```
+
+`reap` 的两条硬性前提：**属主进程已死**（不是"父进程是 1"——容器/supervisor 下孤儿会被 subreaper 收养，永远不会成为 PID 1），且 `/proc/<pid>/cmdline` 仍与句柄记录的命令一致（防 PID 复用）。任一不满足即拒杀，属主健在的进程始终由它自己的 `acceptance_timeout_ms` 约束。
 
 ---
 

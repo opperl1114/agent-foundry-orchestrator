@@ -13,16 +13,18 @@ jobs:
   regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
 
       # The suite must be green on a CLEAN checkout: no sibling repositories, no
       # provider CLIs, no pre-existing runtime state.
       - name: full test suite
-        run: npm test
+        run: |
+          set -o pipefail          # a failing suite must fail this step through the pipe
+          npm test 2>&1 | tee /tmp/test-output.txt
 
       # A clean clone used to materialize bin/* and every .sh as non-executable,
       # which broke every launcher spawn on a fresh machine.
@@ -51,10 +53,13 @@ jobs:
           echo "$out"
           echo "$out" | grep -q 'EXECUTOR_REGISTRY_MISSING'
 
-      - name: working tree stays clean after a run
+      # Stricter than a plain `git status`: runtime state is gitignored, so a
+      # plain check could not see a test writing scheduler.json or
+      # operator-activity/ into the checkout. `--ignored` catches exactly that.
+      - name: a full run leaves the checkout untouched
         run: |
-          git status --porcelain
-          test -z "$(git status --porcelain)"
+          git status --porcelain --ignored
+          test -z "$(git status --porcelain --ignored)"
 
       # Runtime state is per-machine and must not be versioned: a committed
       # circuit-breaker state can ship a banned executor as the factory default
@@ -64,4 +69,31 @@ jobs:
           tracked=$(git ls-files runtime/ | grep -v -E '\.gitkeep$' || true)
           if [ -n "$tracked" ]; then
             echo "::error::runtime state must not be tracked:"; echo "$tracked"; exit 1
+          fi
+
+      # The documented test count has drifted three times (91 -> 146 -> 182 ->
+      # 188). It is checked against the run that just happened instead of being
+      # maintained by hand.
+      - name: documented test count matches the suite
+        run: |
+          actual=$(grep -aE '^. tests [0-9]+' /tmp/test-output.txt | grep -oE '[0-9]+' | head -1)
+          documented=$(grep -oE '[0-9]+ / [0-9]+ PASS' README.md | head -1 | cut -d' ' -f1)
+          echo "actual=$actual documented=$documented"
+          if [ -z "$actual" ] || [ "$actual" != "$documented" ]; then
+            echo "::error::README claims $documented tests, the suite ran $actual"
+            exit 1
+          fi
+
+      # The fixtures create temporary sandboxes; a test file that creates one and
+      # never removes it leaves a directory behind on every single run.
+      - name: no test sandboxes left in /tmp
+        run: |
+          # The fixtures use one dedicated namespace. A broader glob (/tmp/af-*)
+          # flagged this workflow's own capture file - and, locally, a scratch
+          # clone - failing the build for reasons unrelated to the tests.
+          leftovers=$(ls -d /tmp/af-test-*/ 2>/dev/null | wc -l)
+          if [ "$leftovers" -ne 0 ]; then
+            echo "::error::$leftovers fixture sandbox(es) were left behind:"
+            ls -d /tmp/af-test-*/ | head -10
+            exit 1
           fi

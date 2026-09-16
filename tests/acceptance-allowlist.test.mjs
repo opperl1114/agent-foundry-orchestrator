@@ -16,6 +16,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,14 +27,30 @@ import {
   runAcceptance,
   normalizeAcceptanceCmd,
   acceptanceBinding,
+  verifyAcceptanceBinding,
   loadAcceptanceAllowlist,
+  listAcceptanceHandles,
+  reapOrphanedAcceptances,
+  terminateActiveAcceptances,
 } from '../lib/acceptance.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 
 const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 
+// Every temp dir this file creates is removed when the process exits: a test
+// that only cleans up on its happy path (or that creates a fixture inside a
+// helper like boundTask) still leaves the directory behind on /tmp.
+const createdDirs = [];
+process.on('exit', () => {
+  for (const dir of createdDirs) {
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
+  }
+});
+
 function tmpDir(prefix) {
-  return mkdtempSync(join(tmpdir(), prefix));
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  createdDirs.push(dir);
+  return dir;
 }
 
 function boundTask(over = {}) {
@@ -178,5 +195,184 @@ test('ACC-6: 调度器在磁盘上锚点被改写后拒绝执行（不重试）'
     assert.strictEqual(settled.runs.length, 0, 'no executor may be spent on a tampered task');
   } finally {
     rmSync(work, { recursive: true, force: true });
+  }
+});
+
+// ------------------------------------------------------------------ ACC-7
+test('ACC-7: legacy 字符串通道已关闭（即使任务文件显式开启）', async () => {
+  // Report H1: the legacy branch returned before any whitelist check, so this
+  // task file pair executed an arbitrary shell.
+  assert.throws(
+    () => normalizeAcceptanceCmd('id -un; echo pwned', { allowLegacy: true }),
+    /acceptance_command_not_allowlisted/
+  );
+
+  const task = boundTask({
+    acceptance_cmd: 'id -un; echo pwned',
+    allow_legacy_shell_acceptance: true,
+  });
+  const res = await runAcceptance(task);
+  assert.strictEqual(res.ok, false);
+  assert.strictEqual(res.record.failure_reason, 'ACCEPTANCE_COMMAND_REJECTED');
+  assert.doesNotMatch(String(res.output), /pwned/, 'the shell must never have run');
+});
+
+// ------------------------------------------------------------------ ACC-8
+test('ACC-8: 删掉 acceptance_binding 必须 fail-closed，而不是解绑信任锚', async () => {
+  // Report H2: a missing binding was treated as acceptable, and the scheduler
+  // re-bound whatever it found, so deleting one field bypassed the anchor.
+  assert.strictEqual(verifyAcceptanceBinding({ acceptance_cmd: { command: 'node', args: ['--test', 'x'] } }).ok, false);
+
+  const work = tmpDir('af-acc8-');
+  const sched = new Scheduler({ tasksDir: work });
+  sched.enqueue({
+    task_id: 'TASK-ACC8',
+    goal: 'g',
+    acceptance: 'a',
+    fixture_dir: work,
+    acceptance_cmd: { command: 'node', args: ['--test', 'ok.test.mjs'] },
+    author_executor: 'auto',
+    reviewer_executor: 'auto',
+  });
+
+  const file = join(work, 'TASK-ACC8.json');
+  const onDisk = JSON.parse(readFileSync(file, 'utf8'));
+  assert.ok(onDisk.acceptance_binding, 'enqueue must bind the anchor');
+  delete onDisk.acceptance_binding; // the attack: remove the field
+  writeFileSync(file, JSON.stringify(onDisk, null, 2));
+
+  sched.runNext();
+  await sched.waitAll();
+
+  const settled = JSON.parse(readFileSync(file, 'utf8'));
+  assert.strictEqual(settled.state, 'FAILED');
+  assert.strictEqual(settled.failure_reason, 'TASK_FILE_TAMPERED');
+  assert.strictEqual(settled.runs.length, 0, 'no executor may be spent on an unbound anchor');
+});
+
+// ------------------------------------------------------------------ ACC-9
+test('ACC-9: 白名单按完整命令匹配，basename 相同的任意路径不得放行', () => {
+  // Extra hole found while verifying the report: isAllowed compared basenames,
+  // so any file called "node" anywhere on disk satisfied the "node" entry.
+  assert.throws(
+    () => normalizeAcceptanceCmd({ command: '/tmp/somewhere-else/node', args: ['--test'] }),
+    /acceptance_command_not_allowlisted/
+  );
+  // An entry naming an explicit path still has to be named exactly.
+  assert.strictEqual(
+    normalizeAcceptanceCmd({ command: 'node', args: ['--test'] }).command,
+    'node'
+  );
+});
+
+// ------------------------------------------------------------------ ACC-10
+test('ACC-10: 挂住的验收命令会被超时终止（不再永久卡死任务）', { timeout: 30000 }, async () => {
+  // Report H3: runAcceptance had no timeout, no kill, and was invisible to the
+  // shutdown reclamation.
+  const dir = tmpDir('af-acc10-');
+  writeFileSync(join(dir, 'hang.test.mjs'),
+    "import { test } from 'node:test';\ntest('hang forever', async () => { await new Promise(() => {}); });\n");
+
+  const task = boundTask({
+    fixture_dir: dir,
+    acceptance_cmd: { command: 'node', args: ['--test', 'hang.test.mjs'] },
+    acceptance_timeout_ms: 1500,
+  });
+
+  const started = Date.now();
+  const res = await runAcceptance(task);
+  const elapsed = Date.now() - started;
+
+  assert.strictEqual(res.ok, false);
+  assert.strictEqual(res.record.failure_reason, 'timeout');
+  assert.ok(elapsed < 20000, `the timeout must settle the run (took ${elapsed}ms)`);
+});
+
+// ------------------------------------------------------------------ ACC-11
+test('ACC-11: 验收子进程留有可发现的句柄，结束后即清除', { timeout: 30000 }, async () => {
+  // The timeout lives in the orchestrating process, so a SIGKILLed orchestrator
+  // used to leave an unreachable child. The handle makes it discoverable.
+  const dir = tmpDir('af-test-acc11-');
+  writeFileSync(join(dir, 'hang.test.mjs'),
+    "import { test } from 'node:test';\ntest('hang', async () => { await new Promise(() => {}); });\n");
+
+  const task = boundTask({
+    fixture_dir: dir,
+    acceptance_cmd: { command: 'node', args: ['--test', 'hang.test.mjs'] },
+    acceptance_timeout_ms: 60000,
+  });
+
+  const pending = runAcceptance(task);
+  let handles = [];
+  for (let i = 0; i < 60 && handles.length === 0; i += 1) {
+    await new Promise((r) => { setTimeout(r, 50); });
+    handles = listAcceptanceHandles().filter((h) => h.task_id === task.task_id);
+  }
+  assert.strictEqual(handles.length, 1, 'a running acceptance child must be discoverable');
+  assert.strictEqual(handles[0].orphaned, false, 'its owner (this process) is alive');
+  assert.ok(handles[0].pid_alive);
+
+  terminateActiveAcceptances();
+  const res = await pending;
+  assert.strictEqual(res.ok, false, 'a killed acceptance is a failure, not a success');
+
+  const after = listAcceptanceHandles().filter((h) => h.task_id === task.task_id);
+  assert.strictEqual(after.length, 0, 'the handle must be removed when the child settles');
+});
+
+// ------------------------------------------------------------------ ACC-12
+test('ACC-12: 回收器绝不碰父进程健在的验收子进程', { timeout: 30000 }, async () => {
+  const child = spawn('sleep', ['303'], { stdio: 'ignore' });
+  await new Promise((r) => { child.once('spawn', r); });
+  const runId = `ACCEPT-TASK-ACC12-${Date.now()}`;
+  const handleFile = join(process.env.AF_RUNS_DIR, `${runId}.json`);
+  writeFileSync(handleFile, JSON.stringify({
+    run_id: runId, kind: 'acceptance', task_id: 'TASK-ACC12',
+    owner_pid: process.pid, pid: child.pid, command: 'sleep', args: ['303'],
+  }, null, 2));
+
+  try {
+    const res = await reapOrphanedAcceptances({ confirm: true, graceMs: 100 });
+    assert.strictEqual(res.reaped.length, 0, 'a live parent still bounds its child');
+    assert.ok(res.skipped.some((s) => /is alive/.test(s.reason)), `expected a skip reason, got ${JSON.stringify(res.skipped)}`);
+    assert.doesNotThrow(() => process.kill(child.pid, 0), 'the child must still be running');
+  } finally {
+    try { child.kill('SIGKILL'); } catch { /* gone */ }
+    try { rmSync(handleFile, { force: true }); } catch { /* gone */ }
+  }
+});
+
+// ------------------------------------------------------------------ ACC-13
+test('ACC-13: 父进程消失（SIGKILL 场景）后的验收子进程会被回收', { timeout: 30000 }, async () => {
+  // The sleep outlives the shell that started it, and its recorded owner is
+  // already dead - the state an acceptance child lands in when its orchestrator
+  // is SIGKILLed, where the in-process timeout can no longer reach it.
+  const out = spawnSync('bash', ['-c', 'nohup sleep 307 >/dev/null 2>&1 & echo $!'], { encoding: 'utf8' });
+  const orphanPid = Number.parseInt(String(out.stdout).trim(), 10);
+  assert.ok(Number.isInteger(orphanPid) && orphanPid > 0, `could not create an orphan: ${out.stdout} ${out.stderr}`);
+
+  const runId = `ACCEPT-TASK-ACC13-${Date.now()}`;
+  const handleFile = join(process.env.AF_RUNS_DIR, `${runId}.json`);
+  try {
+    for (let i = 0; i < 40; i += 1) {
+      const stat = readFileSync(`/proc/${orphanPid}/stat`, 'utf8');
+      if (stat.slice(stat.lastIndexOf(')') + 2).trim().startsWith('1 ')) break;
+      await new Promise((r) => { setTimeout(r, 50); });
+    }
+    // The owner is a process that has already exited: that is what "orphaned"
+    // means here, and unlike a ppid check it holds even where a subreaper
+    // adopts the child instead of pid 1.
+    const dead = spawnSync('bash', ['-c', 'exit 0']);
+    writeFileSync(handleFile, JSON.stringify({
+      run_id: runId, kind: 'acceptance', task_id: 'TASK-ACC13',
+      owner_pid: dead.pid ?? null, pid: orphanPid, command: 'sleep', args: ['307'],
+    }, null, 2));
+
+    const res = await reapOrphanedAcceptances({ confirm: true, graceMs: 300 });
+    assert.strictEqual(res.reaped.length, 1, `expected the orphan to be reaped, got ${JSON.stringify(res)}`);
+    assert.throws(() => process.kill(orphanPid, 0), 'the orphan must be gone');
+  } finally {
+    try { process.kill(orphanPid, 'SIGKILL'); } catch { /* already reaped */ }
+    try { rmSync(handleFile, { force: true }); } catch { /* gone */ }
   }
 });

@@ -12,6 +12,8 @@ import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
+import './helpers/runtime-state-fixture.mjs';
+import { RUNS_DIR } from '../lib/config.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { saveTaskAtomic } from '../lib/store.mjs';
 import { scanRecovery } from '../lib/recovery.mjs';
@@ -308,7 +310,7 @@ test('TEST SH-3: 被中断任务重启后 -> recovery scan 正确识别（非静
 });
 
 test('TEST SH-4: 进程清理验证 -> 无 orphan handle / active run 释放', async () => {
-  const runsDir = join(process.cwd(), 'runtime', 'runs');
+  const runsDir = RUNS_DIR;
   mkdirSync(runsDir, { recursive: true });
 
   const runId = `RUN-SH4-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;

@@ -17,7 +17,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SANDBOX = mkdtempSync(join(tmpdir(), 'af-cli-'));
+const SANDBOX = mkdtempSync(join(tmpdir(), 'af-test-cli-'));
 process.on('exit', () => { try { rmSync(SANDBOX, { recursive: true, force: true }); } catch { /* best effort */ } });
 
 function cli(script, args) {
@@ -29,6 +29,10 @@ function cli(script, args) {
       ...process.env,
       AF_TASKS_DIR: join(SANDBOX, 'tasks'),
       AF_EXECUTORS_DIR: join(ROOT, 'fixtures', 'agent-foundry-global', 'executors'),
+      // The whole runtime group, so a CLI child cannot write into the checkout.
+      AF_RUNTIME_DIR: SANDBOX,
+      AF_LOCKS_DIR: join(SANDBOX, 'locks'),
+      AF_RUNS_DIR: join(SANDBOX, 'runs'),
       AF_SAFETY_STATE_FILE: join(SANDBOX, 'safety-state.json'),
       AF_RUNTIME_EVENTS_LOG: join(SANDBOX, 'events.jsonl'),
     },

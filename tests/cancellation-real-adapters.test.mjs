@@ -22,11 +22,11 @@ import { fileURLToPath } from 'node:url';
 import './helpers/runtime-state-fixture.mjs';
 import './helpers/executors-fixture.mjs';
 import './helpers/executor-hang-stub-env.mjs';
+import { RUNS_DIR } from '../lib/config.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 import { CodexAdapter, AntigravityAdapter, ClaudeAdapter } from '../lib/adapters.mjs';
 
-const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
-const RUNS_DIR = join(ROOT_DIR, 'runtime', 'runs');
+
 
 function tmpDir(prefix) {
   return mkdtempSync(join(tmpdir(), prefix));

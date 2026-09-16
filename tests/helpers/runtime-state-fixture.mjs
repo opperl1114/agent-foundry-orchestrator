@@ -1,23 +1,33 @@
 // tests/helpers/runtime-state-fixture.mjs
 //
-// The runtime safety state and the runtime event log are per-instance files
-// that live in runtime/. A test that executes a real adapter would otherwise
-// write circuit-breaker state and audit events straight into the checkout.
+// The runtime safety state, the audit log, the run handles, the scheduler's
+// per-instance metadata and the locks are all PER-INSTANCE files under
+// runtime/ and locks/. A test that executes an adapter or a Scheduler would
+// otherwise write them straight into the checkout, which is how runtime/ used
+// to accumulate test residue (gitignored, so `git status` stayed clean and it
+// went unnoticed).
 //
-// Point the default guard at temporary files instead. Import this BEFORE
-// anything that transitively loads lib/adapters.mjs or
-// lib/executor-runtime-guard.mjs - the default paths are resolved once, at
-// module load. An explicit AF_SAFETY_STATE_FILE / AF_RUNTIME_EVENTS_LOG always
-// wins.
-
-import { mkdtempSync } from 'node:fs';
+// Point the whole group at one temporary sandbox. Import this BEFORE anything
+// that loads lib/config.mjs - the paths are resolved once, at module load. An
+// explicitly configured variable always wins, as does a finer-grained one.
+import {
+  rmSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const RUNTIME_STATE_DIR = mkdtempSync(join(tmpdir(), 'af-runtime-state-'));
+export const RUNTIME_SANDBOX = mkdtempSync(join(tmpdir(), 'af-test-runtime-'));
 
-export const SAFETY_STATE_FILE = join(RUNTIME_STATE_DIR, 'executor-safety-state.json');
-export const RUNTIME_EVENTS_LOG = join(RUNTIME_STATE_DIR, 'executor-runtime-events.jsonl');
+// A sandbox that outlives the process is its own kind of residue: these are
+// created once per test FILE per run, so without this they accumulate in /tmp.
+process.on('exit', () => {
+  try { rmSync(RUNTIME_SANDBOX, { recursive: true, force: true }); } catch { /* best effort */ }
+});
 
+export const SAFETY_STATE_FILE = join(RUNTIME_SANDBOX, 'executor-safety-state.json');
+export const RUNTIME_EVENTS_LOG = join(RUNTIME_SANDBOX, 'executor-runtime-events.jsonl');
+
+process.env.AF_RUNTIME_DIR ??= RUNTIME_SANDBOX;
+process.env.AF_LOCKS_DIR ??= join(RUNTIME_SANDBOX, 'locks');
+process.env.AF_RUNS_DIR ??= join(RUNTIME_SANDBOX, 'runs');
 process.env.AF_SAFETY_STATE_FILE ??= SAFETY_STATE_FILE;
 process.env.AF_RUNTIME_EVENTS_LOG ??= RUNTIME_EVENTS_LOG;

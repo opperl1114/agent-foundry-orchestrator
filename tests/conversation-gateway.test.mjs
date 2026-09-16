@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import './helpers/runtime-state-fixture.mjs';
 import * as orchestrator from '../orchestrator.mjs';
 import { Scheduler } from '../lib/scheduler.mjs';
 
@@ -283,6 +284,13 @@ test('TEST CG-3: Task进入现有 Orchestrator (Orchestrator -> Scheduler -> Rou
     });
     assert.strictEqual(finishedStatus.state, 'COMPLETED');
     assert(finishedStatus.executor, 'Executor must be recorded');
+
+    // A task submitted from one line of user input has no acceptance_cmd, so it
+    // has no deterministic gate: that must be a recorded fact an operator can
+    // query, not something inferred from an empty acceptance_runs array.
+    const settled = JSON.parse(readFileSync(join(tmpTasksDir, `${taskId}.json`), 'utf8'));
+    assert.strictEqual(settled.acceptance_status, 'not_configured');
+    assert.strictEqual((settled.acceptance_runs ?? []).length, 0);
 
   } finally {
     rmSync(tmpTasksDir, { recursive: true, force: true });

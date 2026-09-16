@@ -16,11 +16,19 @@
 // The adapters read process.env.VERTEX_GEMINI_LAUNCHER / CLINE_LAUNCHER at call
 // time, so a test can point them at a stub for a single case.
 
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import {
+  rmSync, chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const STUB_DIR = mkdtempSync(join(tmpdir(), 'af-executor-stub-'));
+export const STUB_DIR = mkdtempSync(join(tmpdir(), 'af-test-executor-stub-'));
+
+// A sandbox that outlives the process is its own kind of residue: these are
+// created once per test FILE per run, so without this they accumulate in /tmp.
+process.on('exit', () => {
+  try { rmSync(STUB_DIR, { recursive: true, force: true }); } catch { /* best effort */ }
+});
+
 export const STUB_ARGV_LOG = join(STUB_DIR, 'argv.log');
 
 const STUB_SOURCE = `#!/usr/bin/env node

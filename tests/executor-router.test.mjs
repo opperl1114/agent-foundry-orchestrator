@@ -11,6 +11,7 @@
 //   6C-8: Executor Isolation (no session ref or run ID leakage between executors)
 
 import { test } from 'node:test';
+import './helpers/runtime-state-fixture.mjs';
 import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';

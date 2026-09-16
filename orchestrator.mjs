@@ -27,9 +27,12 @@ import { selectExecutor, ADAPTERS } from './lib/adapters.mjs';
 import { classifyExecutionError } from './lib/executor-error-classifier.mjs';
 import { readTaskFile, taskFileExists, saveTaskWithVersion } from './lib/store.mjs';
 import { runAcceptance, normalizeAcceptanceCmd, acceptanceBinding } from './lib/acceptance.mjs';
+import { RUNTIME_EVENTS_LOG } from './lib/config.mjs';
+import { appendFileSync } from 'node:fs';
 import { GovernanceBridge, classifyPublishVerdict } from './lib/governance.mjs';
 import { bindReviewResult, latestAuthorRun } from './lib/reviews.mjs';
 import { readLock, isLockStale } from './lib/tasklock.mjs';
+import { TASKS_DIR_DEFAULT, LOCKS_DIR as LOCKS_DIR_DEFAULT, RUNS_DIR } from './lib/config.mjs';
 import { authorResultPersisted, reviewResultPersisted, latestAuthoritativeAcceptance } from './lib/recovery.mjs';
 import { WorktreeSession, buildPlanBatches } from './lib/worktree.mjs';
 
@@ -41,8 +44,8 @@ const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 const NON_REVIVABLE_STATES = new Set(['CANCELLED']);
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const TASKS_DIR = process.env.AF_TASKS_DIR || join(ROOT, 'tasks');
-const LOCKS_DIR = join(ROOT, 'locks');
+const TASKS_DIR = TASKS_DIR_DEFAULT;
+const LOCKS_DIR = LOCKS_DIR_DEFAULT;
 const MAX_REVISIONS_DEFAULT = 3;
 
 const RUNNING_STATES = new Set(['AUTHOR_RUNNING', 'FIX_RUNNING', 'REVIEW_RUNNING']);
@@ -334,6 +337,14 @@ function authorContentSha(task) {
   return createHash('sha256').update(content).digest('hex');
 }
 
+// Runtime audit trail is best effort by design: failing to write an audit line
+// must never turn into a task failure.
+function appendRuntimeAuditEvent(event) {
+  try {
+    appendFileSync(RUNTIME_EVENTS_LOG, `${JSON.stringify({ ...event, timestamp: new Date().toISOString() })}\n`, 'utf8');
+  } catch { /* audit is advisory */ }
+}
+
 async function acceptanceGate(task, revision) {
   const prev = latestAuthoritativeAcceptance(task);
   const currentSha = authorContentSha(task);
@@ -352,6 +363,22 @@ async function acceptanceGate(task, revision) {
     acc.record.content_sha256 = currentSha;
     task.acceptance_runs = task.acceptance_runs ?? [];
     task.acceptance_runs.push(acc.record);
+  }
+  // A task with no acceptance_cmd has no deterministic gate at all: the gate
+  // returns ok without running anything, and the only check left is the
+  // reviewer's PASS. That is legitimate (a task submitted from one line of user
+  // input has no command to run) but it must be a visible fact, not something an
+  // operator has to infer from an empty acceptance_runs array.
+  if (!acc.record) {
+    task.acceptance_status = 'not_configured';
+    appendRuntimeAuditEvent({
+      event: 'acceptance_not_configured',
+      task_id: task.task_id,
+      revision,
+      note: 'no acceptance_cmd: the deterministic gate was skipped, only the reviewer verdict applies',
+    });
+  } else {
+    task.acceptance_status = acc.ok ? 'passed' : 'failed';
   }
   return acc;
 }
@@ -840,6 +867,28 @@ export async function executeTask(task, adapters = ADAPTERS, { governanceBridge 
     }
   } catch { /* task not persisted yet (programmatic callers, tests) */ }
 
+  // A task loaded FROM DISK must carry its acceptance trust anchor. A missing
+  // binding there means the field was removed, which used to pass verification
+  // and silently unbind the anchor. `__tasksDir` marks exactly the disk-loaded
+  // tasks (the scheduler and continueTask set it); a programmatic in-memory task
+  // was never bound, so it is stamped here instead.
+  if (!task.acceptance_binding) {
+    if (task.__tasksDir !== undefined) {
+      task.state = 'FAILED';
+      task.failure_reason = 'TASK_FILE_TAMPERED';
+      task.error_classification = {
+        category: 'ENVIRONMENT_FAULT',
+        retryable: false,
+        safety_action: 'NONE',
+        reason: 'acceptance trust anchor is missing from the persisted task file',
+      };
+      task.retryable = false;
+      saveTask(task);
+      return task;
+    }
+    task.acceptance_binding = acceptanceBinding(task);
+  }
+
   // tolerate minimally-shaped task objects (tests, programmatic callers)
   task.runs = task.runs ?? [];
   task.revisions_used = task.revisions_used ?? 1;
@@ -1161,6 +1210,7 @@ function loadTaskFile(path) {
     goal: def.goal,
     acceptance: def.acceptance,
     acceptance_cmd: def.acceptance_cmd ?? null,
+    acceptance_timeout_ms: def.acceptance_timeout_ms ?? null,
     allow_legacy_shell_acceptance: def.allow_legacy_shell_acceptance === true,
     candidate: def.candidate ?? null, // governed_write: {title, target, knowledge_class, sources, publish_tags, publish_summary, rationale}
     governance_env: def.governance_env ?? null, // {server_path, vault_root, state_db, reviewer_mcp_config, reviewer_allowed_tools, reviewer_server_name}
@@ -1425,8 +1475,10 @@ async function withTaskLock(taskId, fn) {
 if (isMain) {
   if (cmd === 'run') {
     const { terminateAllActiveRuns } = await import('./lib/adapters.mjs');
+    const { terminateActiveAcceptances } = await import('./lib/acceptance.mjs');
     const onSignal = async (sig) => {
       console.log(`[orchestrator] Received ${sig}, gracefully terminating active executor runs...`);
+      terminateActiveAcceptances({ signal: sig });
       await terminateAllActiveRuns();
       process.exit(130);
     };
@@ -1574,7 +1626,7 @@ if (isMain) {
       console.error(`[orchestrator] task=${tid} is already ${t0.state} (TASK_TERMINAL) - cancel refused`);
       process.exit(2);
     }
-    const RUNS_HANDLE_DIR = join(ROOT, 'runtime', 'runs');
+    const RUNS_HANDLE_DIR = RUNS_DIR;
     // Identity hints for PID-reuse protection. Matched as SUBSTRINGS against
     // /proc/<pid>/cmdline: launchers are bash wrappers (claude-af/agy-af) that
     // `exec` into the real CLI, so the live cmdline shows claude-ccs/claude or
@@ -1589,6 +1641,12 @@ if (isMain) {
           if (!f.endsWith('.json')) continue;
           try {
             const h = JSON.parse(readFileSync(join(RUNS_HANDLE_DIR, f), 'utf8'));
+            // Acceptance children are deliberately NOT cancelled here: killing one
+            // would look like a failed acceptance command to the owning process
+            // and could send the task into its fix loop. They are bounded by
+            // acceptance_timeout_ms, reclaimed in-process on SIGTERM, and
+            // reaped when orphaned (af-admin acceptance reap).
+            if (h.kind === 'acceptance') continue;
             if (h.task_id === tid) handles.push(h);
           } catch { /* corrupt handle */ }
         }
