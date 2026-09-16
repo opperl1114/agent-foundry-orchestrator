@@ -24,7 +24,7 @@ jobs:
       - name: full test suite
         run: |
           set -o pipefail          # a failing suite must fail this step through the pipe
-          npm test 2>&1 | tee /tmp/af-test-output.txt
+          npm test 2>&1 | tee /tmp/test-output.txt
 
       # A clean clone used to materialize bin/* and every .sh as non-executable,
       # which broke every launcher spawn on a fresh machine.
@@ -76,7 +76,7 @@ jobs:
       # maintained by hand.
       - name: documented test count matches the suite
         run: |
-          actual=$(grep -aE '^. tests [0-9]+' /tmp/af-test-output.txt | grep -oE '[0-9]+' | head -1)
+          actual=$(grep -aE '^. tests [0-9]+' /tmp/test-output.txt | grep -oE '[0-9]+' | head -1)
           documented=$(grep -oE '[0-9]+ / [0-9]+ PASS' README.md | head -1 | cut -d' ' -f1)
           echo "actual=$actual documented=$documented"
           if [ -z "$actual" ] || [ "$actual" != "$documented" ]; then
@@ -88,9 +88,12 @@ jobs:
       # never removes it leaves a directory behind on every single run.
       - name: no test sandboxes left in /tmp
         run: |
-          leftovers=$(ls -d /tmp/af-* 2>/dev/null | wc -l)
+          # Directories only: an earlier version of this step globbed /tmp/af-*
+          # and flagged the capture file this very workflow writes, failing the
+          # build for a reason unrelated to the tests.
+          leftovers=$(ls -d /tmp/af-*/ 2>/dev/null | wc -l)
           if [ "$leftovers" -ne 0 ]; then
             echo "::error::$leftovers test sandbox(es) were left behind:"
-            ls -d /tmp/af-* | head -10
+            ls -d /tmp/af-*/ | head -10
             exit 1
           fi
