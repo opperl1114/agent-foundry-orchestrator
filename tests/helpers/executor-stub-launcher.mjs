@@ -77,6 +77,20 @@ process.stdout.write(JSON.stringify({
 process.exitCode = 1;
 `;
 
+const RATE_LIMIT_SOURCE = `#!/usr/bin/env node
+import { appendFileSync } from 'node:fs';
+
+const args = process.argv.slice(2);
+
+if (process.env.AF_STUB_ARGV_LOG) {
+  appendFileSync(process.env.AF_STUB_ARGV_LOG, JSON.stringify(args) + '\\n');
+}
+
+// A provider quota refusal, which the classifier maps to RATE_LIMIT/COOLDOWN.
+process.stderr.write('Daily limit reached for model z-ai/glm-5.3-flash\\n');
+process.exitCode = 1;
+`;
+
 function writeStub(fileName, source = STUB_SOURCE) {
   const file = join(STUB_DIR, fileName);
   writeFileSync(file, source, 'utf8');
@@ -91,3 +105,6 @@ export const VERTEX_STUB = writeStub('vertex-gemini-af-stub');
 
 // Stub that reports an account/ToS refusal on stdout and exits non-zero.
 export const POLICY_DENIAL_STUB = writeStub('cline-af-policy-denial', POLICY_DENIAL_SOURCE);
+
+// Stub that reports a provider quota refusal (RATE_LIMIT) and exits non-zero.
+export const RATE_LIMIT_STUB = writeStub('cline-af-rate-limit', RATE_LIMIT_SOURCE);

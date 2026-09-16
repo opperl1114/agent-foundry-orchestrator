@@ -315,15 +315,34 @@ test('TEST OPS-M5: logs rotate 不改变事件内容', async () => {
   assert.strictEqual(archiveLines[0], originalLines[0], 'Old event 1 content must be unchanged byte-for-byte');
   assert.strictEqual(archiveLines[1], originalLines[1], 'Old event 2 content must be unchanged byte-for-byte');
 
-  // 2. 验证当前活动日志只保留最近事件，且原始内容一字不差
+  // 2. 验证当前活动日志保留最近事件（内容一字不差），并记录一次轮转审计事件
   const retainedLines = readFileSync(eventsLogFile, 'utf8').trim().split('\n');
-  assert.strictEqual(retainedLines.length, 1);
-  assert.strictEqual(retainedLines[0], originalLines[2], 'Recent event content must be unchanged byte-for-byte');
+  assert.ok(retainedLines.includes(originalLines[2]), 'Recent event content must be unchanged byte-for-byte');
+  assert.strictEqual(retainedLines.length, 2, 'the recent event plus the rotation audit event');
 
-  // 3. 再次轮转（无更旧事件），验证幂等
+  const rotationEvent = retainedLines.map((l) => JSON.parse(l)).find((e) => e.event === 'LOG_ROTATED');
+  assert.ok(rotationEvent, 'rotation must be auditable');
+  assert.strictEqual(rotationEvent.archived_count, 2);
+  assert.strictEqual(rotationEvent.retained_count, 1);
+
+  // 3. 守恒性：归档 + 活动日志覆盖全部原始事件，一条不丢
+  const allLines = [
+    ...readFileSync(res.archive_file, 'utf8').trim().split('\n'),
+    ...retainedLines,
+  ];
+  for (const original of originalLines) {
+    const occurrences = allLines.filter((l) => l === original).length;
+    assert.strictEqual(occurrences, 1, `Event must appear exactly once across archive + active log: ${original}`);
+  }
+
+  // 4. 再次轮转（无更旧事件），验证幂等
   const res2 = rotateLogs({ eventsLogFile, archiveDir, days: 7, now });
   assert.strictEqual(res2.rotated, false);
   assert.strictEqual(res2.archived_count, 0);
+  // 无归档分支同样不得丢事件：快照内容原样回到活动日志
+  const afterSecond = readFileSync(eventsLogFile, 'utf8').trim().split('\n');
+  assert.ok(afterSecond.includes(originalLines[2]), 'a no-op rotation must not drop events');
+  assert.ok(afterSecond.some((l) => JSON.parse(l).event === 'LOG_ROTATED'));
 
   rmSync(dir, { recursive: true, force: true });
 });

@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { tmpdir } from 'node:os';
+import './helpers/runtime-state-fixture.mjs';
 import './helpers/executors-fixture.mjs';
 import { ClineAdapter, ADAPTERS } from '../lib/adapters.mjs';
 import { resolveExecutorRoute } from '../lib/executor-router.mjs';
@@ -105,6 +106,51 @@ test('CLINE-7: Cline adapter sets max reasoning effort (xhigh) for deepseek fall
     else process.env.CLINE_LAUNCHER = previousLauncher;
     if (previousLog === undefined) delete process.env.AF_STUB_ARGV_LOG;
     else process.env.AF_STUB_ARGV_LOG = previousLog;
+  }
+});
+
+test('CLINE-9: 限流回退不得自动清除熔断（不自动解禁）', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { RATE_LIMIT_STUB } = await import('./helpers/executor-stub-launcher.mjs');
+  const { runtimeGuard } = await import('../lib/executor-runtime-guard.mjs');
+  const { RUNTIME_EVENTS_LOG } = await import('./helpers/runtime-state-fixture.mjs');
+
+  const previousLauncher = process.env.CLINE_LAUNCHER;
+  process.env.CLINE_LAUNCHER = RATE_LIMIT_STUB;
+
+  try {
+    const result = await ClineAdapter.run({
+      task_id: 'TASK-CLINE-9',
+      assigned_role: 'author',
+      prompt: 'trigger provider quota refusal',
+      model: 'cline-pass/some-model',
+      cwd: tmpdir(),
+      timeout_ms: 15000,
+    });
+
+    // The refusal must leave the breaker open, still attributed to the quota
+    // refusal: a fallback that silently reset it would un-ban cline without the
+    // probe -> admit gate.
+    const circuit = runtimeGuard.getCircuitState('cline');
+    assert.strictEqual(circuit.state, 'OPEN_COOLDOWN');
+    assert.strictEqual(circuit.category, 'RATE_LIMIT', 'the breaker must keep the original cause');
+    assert.strictEqual(runtimeGuard.canExecute('cline'), false);
+
+    // The decisive check: no automatic reset may have been recorded at all.
+    const events = existsSync(RUNTIME_EVENTS_LOG) ? readFileSync(RUNTIME_EVENTS_LOG, 'utf8') : '';
+    assert.ok(
+      !events.split('\n').filter(Boolean).some((line) => {
+        try {
+          const e = JSON.parse(line);
+          return e.event === 'CIRCUIT_RESET' && e.reset_by === 'cline_fallback';
+        } catch { return false; }
+      }),
+      'the cline fallback must never auto-reset the circuit'
+    );
+  } finally {
+    if (previousLauncher === undefined) delete process.env.CLINE_LAUNCHER;
+    else process.env.CLINE_LAUNCHER = previousLauncher;
+    runtimeGuard.resetCircuit('cline', { reset_by: 'test', reason: 'CLINE-9 cleanup' });
   }
 });
 
