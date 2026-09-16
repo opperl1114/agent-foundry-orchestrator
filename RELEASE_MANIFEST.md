@@ -71,8 +71,8 @@ auto_publish+published:false -> unknown                             (was publish
 **Verified after B2** (clean clone, Node v24):
 
 ```text
-ℹ tests 182
-ℹ pass 182
+ℹ tests 188
+ℹ pass 188
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -91,8 +91,8 @@ returns 0, and `AF_EXECUTORS_DIR=/nonexistent` yields an explicit
 **Verified after B3** (clean clone, Node v24, via `npm test`):
 
 ```text
-ℹ tests 182
-ℹ pass 182
+ℹ tests 188
+ℹ pass 188
 ℹ fail 0
 ℹ skipped 0
 ```
@@ -116,14 +116,19 @@ it is the one artefact in this batch that has not been executed end to end.
 **Follow-up verification** (fresh clone, `npm test`):
 
 ```text
-ℹ tests 182
-ℹ pass 182
+ℹ tests 188
+ℹ pass 188
 ℹ fail 0
 ℹ skipped 0
 ```
 
-`tasks/` holds `task-template.json` before and after the run, and
-`git status --porcelain` is empty.
+A full run now leaves the checkout byte-for-byte untouched: `tasks/`, `locks/`
+and `runtime/` are identical before and after, and `git status --porcelain
+--ignored` is completely empty (it used to list nothing while `runtime/` was
+quietly accumulating `scheduler.json` and `operator-activity/`). The CI check was
+strengthened to `--ignored` for exactly that reason, and INV-6 makes the ordering
+rule mechanical: a test that imports a state-writing module without the runtime
+fixture, or imports one before it, fails the suite.
 
 ---
 

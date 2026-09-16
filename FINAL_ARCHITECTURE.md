@@ -1,7 +1,7 @@
 # Agent Foundry Orchestrator — Architecture Specification (Full Stack v1.2)
 
 > **当前架构版本：** Production Release v1.2 (Full Capabilities Baseline)  
-> **自动化测试状态：** **182 / 182 PASS (100%)**  
+> **自动化测试状态：** **188 / 188 PASS (100%)**  
 > **设计核心：** 零外部数据库、零常驻守护进程、纯文件系统原子持久化、环境自适应无硬编码路径。
 
 ---
@@ -162,7 +162,7 @@ graph TD
 
 ---
 
-## 8. 自动化测试套件矩阵 (182 Tests All Green)
+## 8. 自动化测试套件矩阵 (188 Tests All Green)
 
 | 测试模块 | 用例数 | 覆盖核心保障 |
 | :--- | :---: | :--- |
@@ -173,10 +173,10 @@ graph TD
 | `tests/action-contract.test.mjs` | 8 | Action Contract 合约校验、白名单拦截 |
 | `tests/action-contract-hardening.test.mjs` | 12 | 合约格式加固、极端异常参数防御、分类结果与 CWD 无关 |
 | `tests/production-readiness.test.mjs` | 5 | 异常崩溃恢复、403 强闭锁、SIGTERM 优雅停机、状态损坏检测、双实例互斥锁 |
-| `tests/architecture-invariant.test.mjs` | 5 | 单注册表检验、单调度器检验、防凭证泄露、防治理绕过（仅 published 才算发布）、ROLE != PLATFORM |
+| `tests/architecture-invariant.test.mjs` | 6 | 单注册表检验、单调度器检验、防凭证泄露、防治理绕过（仅 published 才算发布）、ROLE != PLATFORM |
 | `tests/shutdown.test.mjs` | 4 | SIGTERM 进程树自动回收、孤儿句柄消除 |
 | `tests/enterprise-adapter.test.mjs` | 5 | Vertex Gemini 企业适配器接口一致性与角色解耦（stub launcher） |
-| `tests/cline-adapter.test.mjs` | 8 | Cline 适配器接口规范、DeepSeek 推理等级参数、日志 429 穿透防误报 |
+| `tests/cline-adapter.test.mjs` | 9 | Cline 适配器接口规范、DeepSeek 推理等级参数、日志 429 穿透防误报 |
 | `tests/gated-recovery.test.mjs` | 8 | 熔断探活 (Probe)、伪造证据拦截、准入 (Admit) 恢复机制 |
 | `tests/executor-router.test.mjs` | 8 | 纯函数确定性路由漏斗与透明降级 |
 | `tests/executor-ops.test.mjs` | 5 | 运维状态查询、熔断器列表、审计证据持久化 |
@@ -192,6 +192,7 @@ graph TD
 | `tests/executor-error-classifier.test.mjs` | 7 | stdout/stderr 403 与 TOS 一律 fail-closed、测试日志 403 不误报 |
 | `tests/acceptance-allowlist.test.mjs` | 6 | 验收白名单、信任锚防篡改、子进程 env 净化、工作区隔离 |
 | `tests/runtime-guard-state.test.mjs` | 4 | 熔断状态原子写、损坏 fail-closed、纯读查询、冷却投影 |
+| `tests/cli-smoke.test.mjs` | 5 | CLI 入口真实执行：优雅报错、无裸栈、运维子命令可用 |
 | `tests/runtime-guard-policy.test.mjs` | 4 | 策略深合并、ISO 冷却归一、护栏拦截分类、recovery_probe 穿透 |
 | `tests/registry-fail-closed.test.mjs` | 3 | 真源缺失时路由与调度器 fail-closed、出厂代码零作者机路径 |
-| **总计** | **182** | **100% PASS** |
+| **总计** | **188** | **100% PASS** |

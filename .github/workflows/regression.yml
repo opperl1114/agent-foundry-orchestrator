@@ -51,10 +51,13 @@ jobs:
           echo "$out"
           echo "$out" | grep -q 'EXECUTOR_REGISTRY_MISSING'
 
-      - name: working tree stays clean after a run
+      # Stricter than a plain `git status`: runtime state is gitignored, so a
+      # plain check could not see a test writing scheduler.json or
+      # operator-activity/ into the checkout. `--ignored` catches exactly that.
+      - name: a full run leaves the checkout untouched
         run: |
-          git status --porcelain
-          test -z "$(git status --porcelain)"
+          git status --porcelain --ignored
+          test -z "$(git status --porcelain --ignored)"
 
       # Runtime state is per-machine and must not be versioned: a committed
       # circuit-breaker state can ship a banned executor as the factory default
