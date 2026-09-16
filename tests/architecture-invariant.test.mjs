@@ -8,6 +8,7 @@
 //   5. ROLE != PLATFORM: Adapters and router strictly decouple platform identity from task roles.
 
 import { test } from 'node:test';
+import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { readdirSync, readFileSync, existsSync, statSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

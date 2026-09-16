@@ -29,7 +29,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const TASKS_DIR = join(ROOT, 'tasks');
+const TASKS_DIR = process.env.AF_TASKS_DIR || join(ROOT, 'tasks');
 
 const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 

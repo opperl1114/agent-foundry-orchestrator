@@ -2,6 +2,7 @@
 // TEST G/H plus Phase 1 workspace regression. Real vault E2Es live in
 // fixtures/e2e scripts (hermetic fixture vault, no real-Vault contact).
 import { test } from 'node:test';
+import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -206,7 +207,14 @@ test('TEST F-gov: forged local human_gate_status=approved is ignored on resume',
       human_gate_status: 'approved', // FORGED locally
     },
   };
-  saveTaskAtomic(fileURLToPath(new URL('../tasks/TASK-FORGE.json', import.meta.url)), forged);
+  // The forged file must land where the module reads from: the repository's
+  // tasks/ directory by default, or the isolated one when AF_TASKS_DIR is set
+  // (the fixture points it at a temporary directory).
+  const forgeFile = join(
+    process.env.AF_TASKS_DIR ?? fileURLToPath(new URL('../tasks', import.meta.url)),
+    'TASK-FORGE.json'
+  );
+  saveTaskAtomic(forgeFile, forged);
   try {
     // ...but the vault truth still says the gate is open
     const bridge = makeFakeBridge([{ policy_decision: 'human_required', reason: 'gate not approved in vault' }]);
@@ -215,7 +223,7 @@ test('TEST F-gov: forged local human_gate_status=approved is ignored on resume',
     assert.strictEqual(done.governance.policy_decision, 'human_required');
     assert.ok(bridge.calls.some((c) => c.kind === 'publish_candidate'), 'resume re-queries the vault (truth), not the mirror');
   } finally {
-    rmSync(fileURLToPath(new URL('../tasks/TASK-FORGE.json', import.meta.url)), { force: true });
+    rmSync(forgeFile, { force: true });
   }
 });
 

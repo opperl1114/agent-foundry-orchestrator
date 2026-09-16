@@ -5,6 +5,7 @@
 // TEST SH-4: 进程清理验证 -> 无 orphan handle / active run 释放
 
 import { test } from 'node:test';
+import './helpers/tasks-dir-fixture.mjs';
 import './helpers/executors-fixture.mjs';
 import assert from 'node:assert';
 import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';

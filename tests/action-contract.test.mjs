@@ -11,6 +11,7 @@
 //   TEST AC-8: 旧 intent-policy regex 不再作为最终决策来源
 
 import { test } from 'node:test';
+import './helpers/tasks-dir-fixture.mjs';
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
