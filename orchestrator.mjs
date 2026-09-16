@@ -41,7 +41,7 @@ const TERMINAL_STATES = new Set(['COMPLETED', 'FAILED', 'CANCELLED']);
 const NON_REVIVABLE_STATES = new Set(['CANCELLED']);
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const TASKS_DIR = join(ROOT, 'tasks');
+const TASKS_DIR = process.env.AF_TASKS_DIR || join(ROOT, 'tasks');
 const LOCKS_DIR = join(ROOT, 'locks');
 const MAX_REVISIONS_DEFAULT = 3;
 

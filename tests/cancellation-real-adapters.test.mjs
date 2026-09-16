@@ -87,6 +87,37 @@ for (const { name, adapter } of ADAPTER_CASES) {
   });
 }
 
+test('CANCEL-race: 进程注册前到达的取消请求，仍会终止随后启动的进程', async () => {
+  const { cancelRun } = await import('../lib/adapters.mjs');
+  const work = tmpDir('af-cancel-race-');
+  const runId = `RUN-RACE-${Date.now()}`;
+
+  try {
+    // The scheduler announces the run id a moment before the process exists, so
+    // a cancel can land when there is no handle to terminate yet.
+    const early = await cancelRun(runId, { graceMs: 500 });
+    assert.strictEqual(early.already_exited, true, 'no handle exists yet - nothing to terminate');
+
+    // The request is recorded, so when the run actually starts it must be
+    // honoured rather than letting the process run to completion behind a task
+    // that is already CANCELLED.
+    const result = await ClaudeAdapter.run({
+      runId,
+      task_id: 'TASK-CANCEL-RACE',
+      assigned_role: 'author',
+      prompt: 'hang until cancelled',
+      cwd: work,
+      timeout_ms: 15000,
+    });
+
+    assert.strictEqual(result.status, 'cancelled', 'the late-registered process must still be cancelled');
+    assert.match(String(result.error), /cancelled by operator/i);
+    assert.strictEqual(result.error_classification?.retryable, false);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
 test('CANCEL-scheduler: 取消运行中的任务写入 CANCELLED 且不被回卷的 run 覆盖', { timeout: 30000 }, async () => {
   const work = tmpDir('af-cancel-sched-');
   const taskId = 'TASK-CANCEL-SCHED';

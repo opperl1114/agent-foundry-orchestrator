@@ -136,6 +136,12 @@ test('CLINE-9: 限流回退不得自动清除熔断（不自动解禁）', async
     assert.strictEqual(circuit.category, 'RATE_LIMIT', 'the breaker must keep the original cause');
     assert.strictEqual(runtimeGuard.canExecute('cline'), false);
 
+    // The rooted cause must survive: with the breaker open the fallback cannot
+    // start, and reporting that refusal as the outcome would hide WHY the run
+    // failed. The blocked fallback is recorded next to the original failure.
+    assert.strictEqual(result.error_classification?.category, 'RATE_LIMIT', 'the root cause must be preserved');
+    assert.match(String(result.fallback_blocked?.reason ?? ''), /EXECUTOR_CIRCUIT_OPEN/);
+
     // The decisive check: no automatic reset may have been recorded at all.
     const events = existsSync(RUNTIME_EVENTS_LOG) ? readFileSync(RUNTIME_EVENTS_LOG, 'utf8') : '';
     assert.ok(
