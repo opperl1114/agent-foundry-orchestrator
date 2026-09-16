@@ -1,0 +1,64 @@
+#!/bin/bash
+# zcode-af - ZCode CLI adapter for Agent Foundry Global Governance
+#
+# Single Source of Truth: $AF_GLOBAL_DIR/AGENTS.md (agent-foundry-global)
+
+set -u
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+GOV_DIR="${AF_GLOBAL_DIR:-$(cd "$SCRIPT_DIR/../../agent-foundry-global" 2>/dev/null && pwd || true)}"
+CANONICAL="${AF_CANONICAL_AGENTS_MD:-${GOV_DIR:+$GOV_DIR/AGENTS.md}}"
+VAULT_ROOT_VALUE="${VAULT_ROOT:-$(cd "$SCRIPT_DIR/../../agent-foundry-vault" 2>/dev/null && pwd || true)}"
+
+# Resolve zcode.cjs
+ZCODE_CJS="${ZCODE_CJS:-}"
+if [ -z "$ZCODE_CJS" ]; then
+  if [ -f "/mnt/e/Zcode/resources/glm/zcode.cjs" ]; then
+    ZCODE_CJS="/mnt/e/Zcode/resources/glm/zcode.cjs"
+  elif [ -f "E:/Zcode/resources/glm/zcode.cjs" ]; then
+    ZCODE_CJS="E:/Zcode/resources/glm/zcode.cjs"
+  elif [ -f "$HOME/.zcode/resources/glm/zcode.cjs" ]; then
+    ZCODE_CJS="$HOME/.zcode/resources/glm/zcode.cjs"
+  fi
+fi
+
+if [ -z "$ZCODE_CJS" ] && ! command -v zcode >/dev/null 2>&1; then
+  echo "zcode-af: zcode.cjs or zcode CLI not found" >&2
+  exit 2
+fi
+
+if [ -n "$CANONICAL" ] && [ -r "$CANONICAL" ]; then
+  GOV_SHA=$(sha256sum "$CANONICAL" 2>/dev/null | cut -d' ' -f1 || true)
+  export AGENT_FOUNDRY_GOVERNANCE_SHA256="$GOV_SHA"
+  export AGENT_FOUNDRY_GLOBAL_AGENTS="$CANONICAL"
+fi
+export VAULT_ROOT="$VAULT_ROOT_VALUE"
+
+if [ -n "$ZCODE_CJS" ]; then
+  NODE_BIN="${CURRENT_NODE_BIN:-$(command -v node)}"
+  if [ $# -eq 0 ]; then
+    echo "=========================================================="
+    echo "  ZCode-AF (Agent Foundry 智谱 ZCode 适配器)"
+    echo "=========================================================="
+    echo "提示：当前系统挂载的是 ZCode 桌面版 (E:\\Zcode)。"
+    echo "官方桌面安装包未内置终端字符界面 (@zcode/tui)，不支持裸命令进入终端 TUI。"
+    echo ""
+    echo "【常用命令指引】"
+    echo " 1. 运行单次任务:   zcode-af --prompt \"你的任务内容\""
+    echo " 2. 检查版本状态:   zcode-af version"
+    echo " 3. 系统环境诊断:   zcode-af doctor"
+    echo " 4. 账号登录授权:   zcode-af login --no-browser"
+    echo " 5. 编排器自动化:   node bin/af-orchestrator.mjs --executor zcode"
+    echo "=========================================================="
+    if [ -t 0 ]; then
+      read -r -p "请输入要让 ZCode 执行的任务 Prompt (直接回车退出): " USER_INPUT
+      if [ -n "$USER_INPUT" ]; then
+        exec "$NODE_BIN" "$ZCODE_CJS" --mode yolo --prompt "$USER_INPUT"
+      fi
+    fi
+    exit 0
+  fi
+  exec "$NODE_BIN" "$ZCODE_CJS" "$@"
+else
+  exec zcode "$@"
+fi

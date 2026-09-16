@@ -19,5 +19,9 @@
   "cline": {
     "max_parallel": 1,
     "min_interval_ms": 2000
+  },
+  "zcode": {
+    "max_parallel": 1,
+    "min_interval_ms": 2000
   }
 }
