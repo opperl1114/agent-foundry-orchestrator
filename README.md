@@ -1,5 +1,7 @@
 # Agent Foundry Orchestrator
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 > **企业级多智能体协同调度与控制核心 (Multi-Agent Task Orchestrator & Control Plane)**  
 > 当前版本：`Production Release v1.2 (Full Capabilities)` ｜ 自动化测试状态：**200 / 200 PASS (100%)（干净克隆验证）**
 
@@ -221,3 +223,11 @@ node --test
 * 📋 [生产冻结发布清单 (`RELEASE_MANIFEST.md`)](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/RELEASE_MANIFEST.md)
 * 🔒 [基线变更控制协议 (`CHANGE_CONTROL.md`)](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/CHANGE_CONTROL.md)
 * 🔍 [持久化与安全审计报告 (`PERSISTENCE_CHECK.md` / `SECURITY_AUDIT.md`)](file:///mnt/c/Users/relaret/agent-foundry-orchestrator/SECURITY_AUDIT.md)
+
+---
+
+## 📄 开源许可 (License)
+
+本项目基于 [MIT License](./LICENSE) 开源发布。
+
+任何个人和组织均可自由地使用、复制、修改、合并、发布和分发本软件及其文档，唯须在软件或软件的所有副本中保留原始的版权声明与许可声明。本项目按"现状"提供，不附带任何明示或默示的担保。完整许可条款见 [LICENSE](./LICENSE) 文件。
